@@ -1,0 +1,4 @@
+interface:
+  display_name: "Compass Frontend"
+  short_description: "Expo React Native frontend project standards"
+  default_prompt: "Use $compass-frontend to modify the Compass frontend while respecting its Expo Router, React Native, auth, API, responsive UI, and location privacy patterns."

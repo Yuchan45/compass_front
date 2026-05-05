@@ -1,7 +1,16 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/constants/design';
+import {
+  borders,
+  colors,
+  dimensions,
+  fontWeights,
+  opacity,
+  radii,
+  spacing,
+  typography,
+} from '@/constants/design';
 
 type ButtonVariant = 'primary' | 'secondary' | 'quiet';
 
@@ -43,7 +52,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 48,
+    minHeight: dimensions.buttonMinHeight,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.medium,
@@ -55,23 +64,23 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderWidth: 1,
+    borderWidth: borders.defaultWidth,
   },
   quiet: {
-    backgroundColor: 'transparent',
+    backgroundColor: colors.transparent,
   },
   label: {
     color: colors.text,
     fontSize: typography.body,
-    fontWeight: '700',
+    fontWeight: fontWeights.bold,
   },
   primaryLabel: {
     color: colors.surface,
   },
   pressed: {
-    opacity: 0.78,
+    opacity: opacity.pressed,
   },
   disabled: {
-    opacity: 0.55,
+    opacity: opacity.disabled,
   },
 });

@@ -1,6 +1,14 @@
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/constants/design';
+import {
+  borders,
+  colors,
+  dimensions,
+  fontWeights,
+  radii,
+  spacing,
+  typography,
+} from '@/constants/design';
 
 type TextFieldProps = {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
@@ -48,13 +56,13 @@ const styles = StyleSheet.create({
   label: {
     color: colors.text,
     fontSize: typography.small,
-    fontWeight: '700',
+    fontWeight: fontWeights.bold,
   },
   input: {
-    minHeight: 48,
+    minHeight: dimensions.inputMinHeight,
     borderRadius: radii.medium,
     borderColor: colors.border,
-    borderWidth: 1,
+    borderWidth: borders.defaultWidth,
     backgroundColor: colors.surface,
     color: colors.text,
     fontSize: typography.body,

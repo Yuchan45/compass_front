@@ -1,6 +1,7 @@
 import { request } from '@/services/api/client';
 import type {
   AuthResponse,
+  GoogleLoginPayload,
   LoginPayload,
   PublicUser,
   RegisterPayload,
@@ -9,6 +10,13 @@ import type {
 
 export function loginRequest(payload: LoginPayload) {
   return request<AuthResponse>('/auth/login', {
+    body: payload,
+    method: 'POST',
+  });
+}
+
+export function googleLoginRequest(payload: GoogleLoginPayload) {
+  return request<AuthResponse>('/auth/google', {
     body: payload,
     method: 'POST',
   });

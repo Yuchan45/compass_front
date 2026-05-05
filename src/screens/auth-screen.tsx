@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { AuthSessionResult } from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -10,17 +13,71 @@ import { useAuth } from '@/contexts/auth-context';
 
 type AuthMode = 'login' | 'register';
 
+WebBrowser.maybeCompleteAuthSession();
+
+const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
+
 export function AuthScreen() {
-  const { booting, error, loading, login, register } = useAuth();
+  const { booting, error, googleLogin, loading, login, register } = useAuth();
   const [mode, setMode] = useState<AuthMode>('login');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const [identifier, setIdentifier] = useState('');
   const [languageId, setLanguageId] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const googleLoginRef = useRef(googleLogin);
+  const handledGoogleResponseKeyRef = useRef<string | null>(null);
+  const [googleRequest, googleResponse, promptGoogleAuth] = Google.useIdTokenAuthRequest({
+    clientId: googleClientId,
+    scopes: ['openid', 'profile', 'email'],
+    selectAccount: true,
+    webClientId: googleClientId,
+  });
 
   const isRegister = mode === 'register';
+  const googleAuthConfigured = googleClientId.length > 0;
+  const visibleError = error ?? googleError;
+
+  useEffect(() => {
+    googleLoginRef.current = googleLogin;
+  }, [googleLogin]);
+
+  useEffect(() => {
+    if (!googleResponse) {
+      return;
+    }
+
+    const responseKey = getGoogleResponseKey(googleResponse);
+
+    if (handledGoogleResponseKeyRef.current === responseKey) {
+      return;
+    }
+
+    handledGoogleResponseKeyRef.current = responseKey;
+
+    async function completeGoogleLogin() {
+      if (googleResponse?.type === 'success') {
+        const idToken = googleResponse.params.id_token ?? googleResponse.authentication?.idToken;
+
+        if (!idToken) {
+          setGoogleError('Google no devolvio un ID token.');
+          return;
+        }
+
+        setGoogleError(null);
+        await googleLoginRef.current({ idToken });
+        return;
+      }
+
+      if (googleResponse?.type === 'error') {
+        setGoogleError(getGoogleAuthErrorMessage(googleResponse));
+      }
+    }
+
+    void completeGoogleLogin();
+  }, [googleResponse]);
 
   async function submit() {
     if (isRegister) {
@@ -37,7 +94,25 @@ export function AuthScreen() {
     await login({ identifier, password });
   }
 
+  async function submitGoogle() {
+    if (!googleAuthConfigured) {
+      setGoogleError('Falta configurar EXPO_PUBLIC_GOOGLE_CLIENT_ID.');
+      return;
+    }
+
+    setGoogleError(null);
+
+    try {
+      await promptGoogleAuth();
+    } catch (caughtError) {
+      setGoogleError(
+        caughtError instanceof Error ? caughtError.message : 'No se pudo abrir Google Auth.',
+      );
+    }
+  }
+
   function toggleMode() {
+    setGoogleError(null);
     setMode(isRegister ? 'login' : 'register');
   }
 
@@ -119,7 +194,15 @@ export function AuthScreen() {
             />
           </View>
 
-          {error && <Text style={styles.error}>{error}</Text>}
+          {visibleError && <Text style={styles.error}>{visibleError}</Text>}
+
+          <Button
+            disabled={booting || loading || !googleAuthConfigured || !googleRequest}
+            onPress={submitGoogle}
+            variant="secondary"
+          >
+            Continuar con Google
+          </Button>
 
           <Button disabled={booting} loading={loading || booting} onPress={submit}>
             {isRegister ? 'Crear cuenta' : 'Entrar'}
@@ -178,3 +261,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
+function getGoogleResponseKey(response: AuthSessionResult) {
+  if (response.type === 'success' || response.type === 'error') {
+    return response.url || JSON.stringify(response.params);
+  }
+
+  return response.type;
+}
+
+function getGoogleAuthErrorMessage(response: AuthSessionResult) {
+  if (response.type !== 'error') {
+    return 'No se pudo iniciar sesion con Google.';
+  }
+
+  return (
+    response.error?.message ||
+    response.params.error_description ||
+    response.params.error ||
+    'No se pudo iniciar sesion con Google.'
+  );
+}

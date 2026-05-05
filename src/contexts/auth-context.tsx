@@ -1,10 +1,17 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { loginRequest, getMeRequest, registerRequest, updateMeRequest } from '@/services/api/auth';
+import {
+  googleLoginRequest,
+  loginRequest,
+  getMeRequest,
+  registerRequest,
+  updateMeRequest,
+} from '@/services/api/auth';
 import { deleteToken, getToken, setToken } from '@/services/storage/token-storage';
 import type {
   AuthResponse,
+  GoogleLoginPayload,
   LoginPayload,
   PublicUser,
   RegisterPayload,
@@ -19,6 +26,7 @@ type AuthSession = {
 type AuthContextValue = {
   booting: boolean;
   error: string | null;
+  googleLogin: (payload: GoogleLoginPayload) => Promise<void>;
   loading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
@@ -100,6 +108,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await runAuthAction(() => loginRequest(payload));
   }
 
+  async function googleLogin(payload: GoogleLoginPayload) {
+    await runAuthAction(() => googleLoginRequest(payload));
+  }
+
   async function register(payload: RegisterPayload) {
     await runAuthAction(() => registerRequest(payload));
   }
@@ -151,6 +163,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       value={{
         booting,
         error,
+        googleLogin,
         loading,
         login,
         logout,

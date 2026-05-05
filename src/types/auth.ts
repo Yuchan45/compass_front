@@ -20,6 +20,10 @@ export type LoginPayload = {
   password: string;
 };
 
+export type GoogleLoginPayload = {
+  idToken: string;
+};
+
 export type RegisterPayload = {
   displayName: string;
   email: string;

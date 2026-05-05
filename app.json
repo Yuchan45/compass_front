@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "compass-front",
+    "name": "Compass",
     "slug": "compass-front",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -25,6 +25,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
       [
         "expo-splash-screen",
         {
@@ -34,7 +35,8 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

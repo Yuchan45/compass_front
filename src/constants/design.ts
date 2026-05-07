@@ -6,6 +6,8 @@ export const colors = {
   danger: '#b42318',
   google: '#4285f4',
   muted: '#6b7c74',
+  navActive: '#6d4ee8',
+  navInactive: '#4f5965',
   primary: '#0f766e',
   primarySoft: '#d7f0ea',
   secondary: '#c05621',
@@ -38,6 +40,7 @@ export const borders = {
 };
 
 export const spacing = {
+  compactGap: 4,
   one: 6,
   two: 10,
   three: 14,
@@ -86,6 +89,8 @@ export const dimensions = {
   authExternalIconSize: 20,
   authEntryMinHeight: 560,
   authFormMinHeight: 620,
+  authGooglePopupHeight: 680,
+  authGooglePopupWidth: 515,
   authButtonMinHeight: 48,
   authDividerMinHeight: 42,
   authDividerLineHeight: 1,
@@ -98,7 +103,38 @@ export const dimensions = {
   authSwitchMinHeight: 54,
   buttonMinHeight: 48,
   inputMinHeight: 48,
+  bottomNavigationHeight: 56,
+  bottomNavigationIconSize: 24,
+  bottomNavigationCenterButtonSize: 35,
+  bottomNavigationCenterIconSize: 24,
+  bottomNavigationItemMinHeight: 35,
+  bottomNavigationItemMinWidth: 50,
   summaryItemMinHeight: 58,
+};
+
+export const navigationTheme = {
+  colors: {
+    active: colors.navActive,
+    background: colors.surface,
+    border: colors.border,
+    centerButtonBackground: colors.navActive,
+    centerButtonIcon: colors.surface,
+    inactive: colors.navInactive,
+  },
+  dimensions: {
+    centerButtonSize: dimensions.bottomNavigationCenterButtonSize,
+    centerIconSize: dimensions.bottomNavigationCenterIconSize,
+    height: dimensions.bottomNavigationHeight,
+    iconSize: dimensions.bottomNavigationIconSize,
+    itemMinHeight: dimensions.bottomNavigationItemMinHeight,
+    itemMinWidth: dimensions.bottomNavigationItemMinWidth,
+  },
+  opacity: {
+    pressed: opacity.pressed,
+  },
+  radii: {
+    centerButton: dimensions.bottomNavigationCenterButtonSize / 2,
+  },
 };
 
 export const authTheme = {
@@ -132,6 +168,8 @@ export const authTheme = {
     footerMinHeight: dimensions.authFooterMinHeight,
     forgotMinHeight: dimensions.authForgotMinHeight,
     formMinHeight: dimensions.authFormMinHeight,
+    googlePopupHeight: dimensions.authGooglePopupHeight,
+    googlePopupWidth: dimensions.authGooglePopupWidth,
     maxWidth: dimensions.authMaxWidth,
     passwordToggleMinHeight: dimensions.authPasswordToggleMinHeight,
     passwordToggleMinWidth: dimensions.authPasswordToggleMinWidth,

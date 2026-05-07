@@ -53,7 +53,7 @@ export function HomeScreen() {
       </View>
 
       <View style={styles.panel}>
-        <Text style={styles.sectionTitle}>Perfil</Text>
+        <Text style={styles.sectionTitle}>Profile</Text>
         <TextField label="Display name" onChangeText={setDisplayName} value={displayName} />
         <TextField
           autoCapitalize="none"
@@ -66,13 +66,13 @@ export function HomeScreen() {
         {error && <Text style={styles.error}>{error}</Text>}
 
         <Button loading={loading} onPress={submitProfile}>
-          Guardar perfil
+          Save profile
         </Button>
         <Button loading={loading} onPress={refreshMe} variant="secondary">
-          Refrescar
+          Refresh
         </Button>
         <Button onPress={logout} variant="quiet">
-          Cerrar sesion
+          Sign out
         </Button>
       </View>
     </Screen>

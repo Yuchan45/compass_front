@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AuthSessionResult } from 'expo-auth-session';
+import type { AuthRequestPromptOptions, AuthSessionResult } from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as WebBrowser from 'expo-web-browser';
 import {
   ActivityIndicator,
   Image,
@@ -21,11 +20,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { brandImages, externalImages } from '@/constants/assets';
 import { authTheme, borders } from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
+import { googleAuthPopupWindowName } from '@/utils/google-auth-popup';
 
 type AuthMode = 'entry' | 'login' | 'register';
 type ButtonVariant = 'primary' | 'outline' | 'link';
-
-WebBrowser.maybeCompleteAuthSession();
 
 const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
 const authColors = authTheme.colors;
@@ -152,7 +150,7 @@ export function AuthScreen() {
     setLocalError(null);
 
     try {
-      await promptGoogleAuth();
+      await promptGoogleAuth(getGooglePromptOptions());
     } catch (caughtError) {
       setLocalError(
         caughtError instanceof Error ? caughtError.message : 'Could not open Google login.',
@@ -514,6 +512,28 @@ function getGoogleAuthErrorMessage(response: AuthSessionResult) {
     response.params.error ||
     'Could not login with Google.'
   );
+}
+
+function getGooglePromptOptions(): AuthRequestPromptOptions | undefined {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return undefined;
+  }
+
+  const width = authDimensions.googlePopupWidth;
+  const height = authDimensions.googlePopupHeight;
+  const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
+  const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
+
+  return {
+    windowName: googleAuthPopupWindowName,
+    windowFeatures: {
+      height,
+      left,
+      popup: true,
+      top,
+      width,
+    },
+  };
 }
 
 function getUsernameFromEmail(email: string) {

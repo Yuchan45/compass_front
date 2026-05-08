@@ -1,8 +1,12 @@
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
+import { fontAssets } from '@/constants/fonts';
 import { AuthProvider } from '@/contexts/auth-context';
 import {
   closeGoogleAuthPopup,
@@ -13,8 +17,22 @@ import {
 
 const webAuthCompletion = completeWebAuthSession();
 
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 export default function RootLayout() {
+  const [fontsLoaded, fontLoadError] = useFonts(fontAssets);
+
+  useEffect(() => {
+    if (fontsLoaded || fontLoadError) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontLoadError, fontsLoaded]);
+
   if (webAuthCompletion.shouldRenderCompletion) {
+    return null;
+  }
+
+  if (!fontsLoaded && !fontLoadError) {
     return null;
   }
 

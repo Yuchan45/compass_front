@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AuthRequestPromptOptions, AuthSessionResult } from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ActivityIndicator,
@@ -36,6 +37,7 @@ const authTypography = authTheme.typography;
 
 export function AuthScreen() {
   const { booting, error, googleLogin, loading, login, register } = useAuth();
+  const router = useRouter();
   const [mode, setMode] = useState<AuthMode>('entry');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [identifier, setIdentifier] = useState('');
@@ -86,7 +88,12 @@ export function AuthScreen() {
         }
 
         setLocalError(null);
-        await googleLoginRef.current({ idToken });
+        const loggedIn = await googleLoginRef.current({ idToken });
+
+        if (loggedIn) {
+          router.replace('/profile');
+        }
+
         return;
       }
 
@@ -96,7 +103,7 @@ export function AuthScreen() {
     }
 
     void completeGoogleLogin();
-  }, [googleResponse]);
+  }, [googleResponse, router]);
 
   function changeMode(nextMode: AuthMode) {
     setLocalError(null);
@@ -112,10 +119,14 @@ export function AuthScreen() {
     }
 
     setLocalError(null);
-    await login({
+    const loggedIn = await login({
       identifier: trimmedIdentifier,
       password: loginPassword,
     });
+
+    if (loggedIn) {
+      router.replace('/profile');
+    }
   }
 
   async function submitRegister() {
@@ -132,12 +143,16 @@ export function AuthScreen() {
     }
 
     setLocalError(null);
-    await register({
+    const registered = await register({
       displayName: getDisplayNameFromEmail(email),
       email,
       password: registerPassword,
       username: getUsernameFromEmail(email),
     });
+
+    if (registered) {
+      router.replace('/profile');
+    }
   }
 
   async function submitGoogle() {

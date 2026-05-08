@@ -10,6 +10,7 @@ type ProfileHeaderProps = {
   avatarUrl: string | null;
   displayName: string;
   email: string;
+  onEditPress?: () => void;
   username: string;
 };
 
@@ -19,7 +20,13 @@ type HeaderIconButtonProps = {
   onPress?: () => void;
 };
 
-export function ProfileHeader({ avatarUrl, displayName, email, username }: ProfileHeaderProps) {
+export function ProfileHeader({
+  avatarUrl,
+  displayName,
+  email,
+  onEditPress,
+  username,
+}: ProfileHeaderProps) {
   const avatarSource: ImageSourcePropType = avatarUrl
     ? { uri: avatarUrl }
     : commonImages.defaultProfile;
@@ -33,7 +40,7 @@ export function ProfileHeader({ avatarUrl, displayName, email, username }: Profi
 
         <View style={styles.actionStack}>
           <HeaderIconButton accessibilityLabel="Settings" icon="cog" />
-          <HeaderIconButton accessibilityLabel="Edit profile" icon="pencil" />
+          <HeaderIconButton accessibilityLabel="Edit profile" icon="pencil" onPress={onEditPress} />
           <HeaderIconButton accessibilityLabel="Open chat" icon="chat-processing" />
         </View>
 

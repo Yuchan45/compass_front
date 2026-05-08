@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,6 +16,7 @@ import { useAuth } from '@/contexts/auth-context';
 
 export function ProfileScreen() {
   const { session } = useAuth();
+  const router = useRouter();
 
   if (!session) {
     return null;
@@ -31,6 +33,7 @@ export function ProfileScreen() {
               avatarUrl={user.avatarUrl}
               displayName={user.displayName}
               email={user.email}
+              onEditPress={() => router.push('/edit-profile')}
               username={user.username}
             />
 

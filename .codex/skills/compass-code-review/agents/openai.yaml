@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Review Agent"
+  short_description: "Review frontend PRs for risk and quality"
+  default_prompt: "Use $compass-code-review to review this Compass frontend PR for Expo Router, React Native, auth, API integration, responsive UI, performance, accessibility, naming, and test risk."

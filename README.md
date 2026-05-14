@@ -64,6 +64,10 @@ npm run typecheck
 npm run check
 ```
 
+## Development Workflow
+
+See [docs/codex-skills.md](docs/codex-skills.md) for the local Codex skills and recommended implementation, documentation, review, and commit workflow.
+
 ## Structure
 
 - `src/app`: Expo Router entry.

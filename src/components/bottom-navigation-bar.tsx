@@ -16,7 +16,7 @@ type NavigationItem = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   key: NavigationItemKey;
   label: string;
-  route?: '/' | '/profile';
+  route?: '/' | '/friends' | '/profile';
 };
 
 const navigationItems: NavigationItem[] = [
@@ -35,6 +35,7 @@ const navigationItems: NavigationItem[] = [
     icon: 'account-group-outline',
     key: 'friends',
     label: 'Friends',
+    route: '/friends',
   },
   {
     icon: 'account',

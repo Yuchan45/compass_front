@@ -1,21 +1,58 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText as Text } from '@/components/app-text';
-import { colors, fontWeights, radii, spacing, typography } from '@/constants/design';
+import { colors, fontWeights, opacity, radii, spacing, typography } from '@/constants/design';
 
-export function FriendsTopTabs() {
+export type FriendsTab = 'search' | 'requests';
+
+type FriendsTopTabsProps = {
+  activeTab: FriendsTab;
+  onRequestsPress: () => void;
+  onSearchPress: () => void;
+  requestCount: number;
+};
+
+export function FriendsTopTabs({
+  activeTab,
+  onRequestsPress,
+  onSearchPress,
+  requestCount,
+}: FriendsTopTabsProps) {
   return (
     <View style={styles.tabs}>
-      <View style={[styles.tab, styles.activeTab]}>
-        <Text style={[styles.tabText, styles.activeTabText]}>Search</Text>
-      </View>
-      <View style={styles.tab}>
-        <Text style={styles.tabText}>Requests</Text>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>0</Text>
-        </View>
-      </View>
+      <TabButton active={activeTab === 'search'} label="Search" onPress={onSearchPress} />
+      <TabButton
+        active={activeTab === 'requests'}
+        label="Requests"
+        onPress={onRequestsPress}
+        requestCount={requestCount}
+      />
     </View>
+  );
+}
+
+type TabButtonProps = {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+  requestCount?: number;
+};
+
+function TabButton({ active, label, onPress, requestCount }: TabButtonProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={({ pressed }) => [styles.tab, active && styles.activeTab, pressed && styles.pressed]}
+    >
+      <Text style={[styles.tabText, active && styles.activeTabText]}>{label}</Text>
+      {requestCount !== undefined && requestCount > 0 ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{requestCount}</Text>
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -59,5 +96,8 @@ const styles = StyleSheet.create({
     color: colors.surface,
     fontSize: typography.compact,
     fontWeight: fontWeights.extraBold,
+  },
+  pressed: {
+    opacity: opacity.pressed,
   },
 });

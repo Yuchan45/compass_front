@@ -18,6 +18,14 @@ Registration sends a user-selected `username`. Usernames must be 3-30 characters
 
 Profile updates can also send `username` through `PATCH /users/me`; the frontend applies the same local validation before submitting.
 
+## Users
+
+User discovery requests live in `src/services/api/users.ts`.
+
+- `GET /users/search?query=:query&limit=20` searches users from the Friends search tab after the user submits the search with the keyboard search/enter action.
+
+The search response is modeled by `src/types/users.ts`. Each result exposes `profile`, `mutualFriendsCount`, and an optional `relationship` object so the UI can label users who are already friends or have a pending request. The frontend does not call this endpoint on every keypress. The Friends screen enforces a minimum of 3 typed characters before submitting the request.
+
 ## Friendships
 
 Friendship requests live in `src/services/api/friendships.ts`.

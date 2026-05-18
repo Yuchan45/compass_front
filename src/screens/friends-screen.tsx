@@ -9,6 +9,7 @@ import {
   type FriendRequest,
   FriendRequestsList,
   FriendRequestsSectionHeader,
+  FriendSearchResultsList,
   FriendsHeader,
   FriendsList,
   FriendsSectionHeader,
@@ -23,7 +24,9 @@ import {
   getAcceptedFriendsRequest,
   getReceivedPendingFriendshipsRequest,
 } from '@/services/api/friendships';
+import { MIN_USER_SEARCH_LENGTH, searchUsersRequest } from '@/services/api/users';
 import type { AcceptedFriendship, Friendship } from '@/types/friendships';
+import type { SearchUserResult } from '@/types/users';
 
 export function FriendsScreen() {
   const { session } = useAuth();
@@ -36,6 +39,10 @@ export function FriendsScreen() {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [requestsError, setRequestsError] = useState<string | null>(null);
   const [requestsLoading, setRequestsLoading] = useState(true);
+  const [submittedQuery, setSubmittedQuery] = useState('');
+  const [userSearchError, setUserSearchError] = useState<string | null>(null);
+  const [userSearchLoading, setUserSearchLoading] = useState(false);
+  const [userSearchResults, setUserSearchResults] = useState<SearchUserResult[]>([]);
 
   const loadFriends = useCallback(async () => {
     if (!session) {
@@ -82,20 +89,8 @@ export function FriendsScreen() {
     void loadFriendRequests();
   }, [loadFriends, loadFriendRequests]);
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const visibleFriends = useMemo(() => {
-    if (!normalizedQuery) {
-      return friends;
-    }
-
-    return friends.filter((friend) => {
-      const displayName = friend.displayName.toLowerCase();
-      const username = friend.username.toLowerCase();
-
-      return displayName.includes(normalizedQuery) || username.includes(normalizedQuery);
-    });
-  }, [friends, normalizedQuery]);
-
+  const trimmedQuery = query.trim();
+  const normalizedQuery = trimmedQuery.toLowerCase();
   const visibleRequests = useMemo(() => {
     if (!normalizedQuery) {
       return friendRequests;
@@ -108,6 +103,12 @@ export function FriendsScreen() {
       return displayName.includes(normalizedQuery) || username.includes(normalizedQuery);
     });
   }, [friendRequests, normalizedQuery]);
+  const helperText =
+    trimmedQuery.length > 0 && trimmedQuery.length < MIN_USER_SEARCH_LENGTH
+      ? `Type at least ${MIN_USER_SEARCH_LENGTH} letters to search.`
+      : null;
+  const hasSubmittedSearch =
+    submittedQuery.length >= MIN_USER_SEARCH_LENGTH && submittedQuery === trimmedQuery;
 
   async function acceptReceivedRequest(id: string) {
     if (!session) {
@@ -150,6 +151,50 @@ export function FriendsScreen() {
     setFriendRequests((currentRequests) => currentRequests.filter((request) => request.id !== id));
   }
 
+  async function submitUserSearch() {
+    if (!session) {
+      return;
+    }
+
+    const searchQuery = trimmedQuery;
+
+    if (!searchQuery) {
+      clearUserSearch();
+      return;
+    }
+
+    if (searchQuery.length < MIN_USER_SEARCH_LENGTH) {
+      setSubmittedQuery('');
+      setUserSearchError(null);
+      setUserSearchResults([]);
+      return;
+    }
+
+    setSubmittedQuery(searchQuery);
+    setUserSearchLoading(true);
+    setUserSearchError(null);
+    setUserSearchResults([]);
+
+    try {
+      const response = await searchUsersRequest(session.accessToken, searchQuery);
+      setUserSearchResults(response.data);
+    } catch (caughtError) {
+      const message = getErrorMessage(caughtError, 'Could not search users.');
+      setUserSearchError(message);
+      setUserSearchResults([]);
+      showToast({ message, mode: 'alert' });
+    } finally {
+      setUserSearchLoading(false);
+    }
+  }
+
+  function clearUserSearch() {
+    setQuery('');
+    setSubmittedQuery('');
+    setUserSearchError(null);
+    setUserSearchResults([]);
+  }
+
   if (!session) {
     return null;
   }
@@ -161,10 +206,12 @@ export function FriendsScreen() {
           <View style={styles.container}>
             <FriendsHeader
               activeTab={activeTab}
-              onClearSearch={() => setQuery('')}
+              onClearSearch={clearUserSearch}
               onQueryChange={setQuery}
               onRequestsPress={() => setActiveTab('requests')}
               onSearchPress={() => setActiveTab('search')}
+              onSubmitSearch={submitUserSearch}
+              searchHelperText={activeTab === 'search' ? helperText : null}
               query={query}
               requestCount={friendRequests.length}
             />
@@ -194,18 +241,42 @@ export function FriendsScreen() {
                 </>
               ) : (
                 <>
-                  <FriendsSectionHeader count={visibleFriends.length} />
-                  {friendsLoading ? (
-                    <FriendsLoadingState />
+                  {hasSubmittedSearch ? (
+                    <>
+                      <FriendsSectionHeader
+                        count={userSearchResults.length}
+                        title="Search Results"
+                      />
+                      {userSearchLoading ? (
+                        <UserSearchLoadingState />
+                      ) : (
+                        <>
+                          {userSearchError ? (
+                            <RequestsErrorState
+                              message={userSearchError}
+                              onRetry={() => void submitUserSearch()}
+                            />
+                          ) : null}
+                          <FriendSearchResultsList results={userSearchResults} />
+                        </>
+                      )}
+                    </>
                   ) : (
                     <>
-                      {friendsError ? (
-                        <RequestsErrorState
-                          message={friendsError}
-                          onRetry={() => void loadFriends()}
-                        />
-                      ) : null}
-                      <FriendsList friends={visibleFriends} />
+                      <FriendsSectionHeader count={friends.length} />
+                      {friendsLoading ? (
+                        <FriendsLoadingState />
+                      ) : (
+                        <>
+                          {friendsError ? (
+                            <RequestsErrorState
+                              message={friendsError}
+                              onRetry={() => void loadFriends()}
+                            />
+                          ) : null}
+                          <FriendsList friends={friends} />
+                        </>
+                      )}
                     </>
                   )}
                 </>
@@ -258,6 +329,15 @@ function FriendsLoadingState() {
     <View style={styles.statusCard}>
       <ActivityIndicator color={colors.navActive} />
       <Text style={styles.statusText}>Loading friends...</Text>
+    </View>
+  );
+}
+
+function UserSearchLoadingState() {
+  return (
+    <View style={styles.statusCard}>
+      <ActivityIndicator color={colors.navActive} />
+      <Text style={styles.statusText}>Searching users...</Text>
     </View>
   );
 }

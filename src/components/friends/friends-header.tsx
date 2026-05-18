@@ -12,6 +12,8 @@ type FriendsHeaderProps = {
   onQueryChange: (value: string) => void;
   onRequestsPress: () => void;
   onSearchPress: () => void;
+  onSubmitSearch: () => void;
+  searchHelperText?: string | null;
   query: string;
   requestCount: number;
 };
@@ -22,6 +24,8 @@ export function FriendsHeader({
   onQueryChange,
   onRequestsPress,
   onSearchPress,
+  onSubmitSearch,
+  searchHelperText,
   query,
   requestCount,
 }: FriendsHeaderProps) {
@@ -37,7 +41,13 @@ export function FriendsHeader({
         />
       </View>
 
-      <FriendsSearchBar onChangeText={onQueryChange} onClear={onClearSearch} value={query} />
+      <FriendsSearchBar
+        helperText={searchHelperText}
+        onChangeText={onQueryChange}
+        onClear={onClearSearch}
+        onSubmitSearch={onSubmitSearch}
+        value={query}
+      />
     </View>
   );
 }

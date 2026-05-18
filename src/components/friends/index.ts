@@ -1,4 +1,5 @@
 export { type FriendRequest, FriendRequestsList } from './friend-requests-list';
+export { FriendSearchResultsList } from './friend-search-results-list';
 export { FriendRequestsSectionHeader } from './friend-requests-section-header';
 export { FriendsEmptyState } from './friends-empty-state';
 export { FriendsHeader } from './friends-header';

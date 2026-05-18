@@ -5,12 +5,15 @@ import { colors, fontWeights, spacing, typography } from '@/constants/design';
 
 type FriendsSectionHeaderProps = {
   count: number;
+  title?: string;
 };
 
-export function FriendsSectionHeader({ count }: FriendsSectionHeaderProps) {
+export function FriendsSectionHeader({ count, title = 'Friends' }: FriendsSectionHeaderProps) {
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>Friends ({count})</Text>
+      <Text style={styles.title}>
+        {title} ({count})
+      </Text>
     </View>
   );
 }

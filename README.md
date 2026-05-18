@@ -68,6 +68,10 @@ npm run check
 
 See [docs/codex-skills.md](docs/codex-skills.md) for the local Codex skills and recommended implementation, documentation, review, and commit workflow.
 
+## API Integration
+
+See [docs/api-integration.md](docs/api-integration.md) for frontend API services, auth token usage, friendship endpoints, and error handling.
+
 ## Structure
 
 - `src/app`: Expo Router entry.

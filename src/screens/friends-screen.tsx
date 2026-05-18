@@ -20,40 +20,42 @@ import { useToast } from '@/contexts/toast-context';
 import {
   acceptFriendshipRequest,
   declineFriendshipRequest,
+  getAcceptedFriendsRequest,
   getReceivedPendingFriendshipsRequest,
 } from '@/services/api/friendships';
-import type { Friendship } from '@/types/friendships';
-
-const initialFriends: Friend[] = [
-  {
-    id: 'valentina-russo',
-    displayName: 'Valentina Russo',
-    username: 'valen.russo',
-    lastMeetup: 'Last meetup: Palermo Woods',
-  },
-  {
-    id: 'diego-mendez',
-    displayName: 'Diego Mendez',
-    username: 'diegomendez',
-    lastMeetup: 'Last meetup: Coffee Lab',
-  },
-  {
-    id: 'ana-beltran',
-    displayName: 'Ana Beltran',
-    username: 'ana.beltran',
-    lastMeetup: 'Last meetup: San Telmo Market',
-  },
-];
+import type { AcceptedFriendship, Friendship } from '@/types/friendships';
 
 export function FriendsScreen() {
   const { session } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<FriendsTab>('search');
   const [query, setQuery] = useState('');
-  const [friends] = useState(initialFriends);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friendsError, setFriendsError] = useState<string | null>(null);
+  const [friendsLoading, setFriendsLoading] = useState(true);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [requestsError, setRequestsError] = useState<string | null>(null);
   const [requestsLoading, setRequestsLoading] = useState(true);
+
+  const loadFriends = useCallback(async () => {
+    if (!session) {
+      return;
+    }
+
+    setFriendsLoading(true);
+    setFriendsError(null);
+
+    try {
+      const response = await getAcceptedFriendsRequest(session.accessToken);
+      setFriends(response.data.map(mapAcceptedFriend));
+    } catch (caughtError) {
+      const message = getErrorMessage(caughtError, 'Could not load friends.');
+      setFriendsError(message);
+      showToast({ message, mode: 'alert' });
+    } finally {
+      setFriendsLoading(false);
+    }
+  }, [session, showToast]);
 
   const loadFriendRequests = useCallback(async () => {
     if (!session) {
@@ -76,8 +78,9 @@ export function FriendsScreen() {
   }, [session, showToast]);
 
   useEffect(() => {
+    void loadFriends();
     void loadFriendRequests();
-  }, [loadFriendRequests]);
+  }, [loadFriends, loadFriendRequests]);
 
   const normalizedQuery = query.trim().toLowerCase();
   const visibleFriends = useMemo(() => {
@@ -115,6 +118,7 @@ export function FriendsScreen() {
 
     try {
       await acceptFriendshipRequest(session.accessToken, id);
+      await loadFriends();
       return true;
     } catch (caughtError) {
       const message = getErrorMessage(caughtError, 'Could not accept friend request.');
@@ -191,7 +195,19 @@ export function FriendsScreen() {
               ) : (
                 <>
                   <FriendsSectionHeader count={visibleFriends.length} />
-                  <FriendsList friends={visibleFriends} />
+                  {friendsLoading ? (
+                    <FriendsLoadingState />
+                  ) : (
+                    <>
+                      {friendsError ? (
+                        <RequestsErrorState
+                          message={friendsError}
+                          onRetry={() => void loadFriends()}
+                        />
+                      ) : null}
+                      <FriendsList friends={visibleFriends} />
+                    </>
+                  )}
                 </>
               )}
             </View>
@@ -201,6 +217,17 @@ export function FriendsScreen() {
       <BottomNavigationBar activeItem="friends" />
     </View>
   );
+}
+
+function mapAcceptedFriend(relationship: AcceptedFriendship): Friend {
+  return {
+    avatarUrl: relationship.friend.avatarUrl,
+    displayName: relationship.friend.displayName,
+    email: relationship.friend.email,
+    id: relationship.friend.id,
+    lastSeenAt: relationship.friend.lastSeenAt,
+    username: relationship.friend.username,
+  };
 }
 
 function mapReceivedFriendRequest(friendship: Friendship): FriendRequest {
@@ -222,6 +249,15 @@ function RequestsLoadingState() {
     <View style={styles.statusCard}>
       <ActivityIndicator color={colors.navActive} />
       <Text style={styles.statusText}>Loading friend requests...</Text>
+    </View>
+  );
+}
+
+function FriendsLoadingState() {
+  return (
+    <View style={styles.statusCard}>
+      <ActivityIndicator color={colors.navActive} />
+      <Text style={styles.statusText}>Loading friends...</Text>
     </View>
   );
 }

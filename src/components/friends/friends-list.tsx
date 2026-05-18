@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
 import { AppText as Text } from '@/components/app-text';
 import { commonImages } from '@/constants/assets';
@@ -14,9 +15,11 @@ import {
 } from '@/constants/design';
 
 export type Friend = {
+  avatarUrl: string | null;
+  email: string;
   id: string;
   displayName: string;
-  lastMeetup: string;
+  lastSeenAt: string | null;
   username: string;
 };
 
@@ -43,13 +46,13 @@ type FriendCardProps = {
 };
 
 function FriendCard({ friend }: FriendCardProps) {
+  const avatarSource: ImageSourcePropType = friend.avatarUrl
+    ? { uri: friend.avatarUrl }
+    : commonImages.defaultProfile;
+
   return (
     <View style={styles.card}>
-      <Image
-        accessibilityIgnoresInvertColors
-        source={commonImages.defaultProfile}
-        style={styles.avatar}
-      />
+      <Image accessibilityIgnoresInvertColors source={avatarSource} style={styles.avatar} />
 
       <View style={styles.identity}>
         <Text numberOfLines={1} style={styles.name}>
@@ -59,7 +62,7 @@ function FriendCard({ friend }: FriendCardProps) {
           @{friend.username}
         </Text>
         <Text numberOfLines={1} style={styles.meta}>
-          {friend.lastMeetup}
+          {friend.email}
         </Text>
       </View>
 

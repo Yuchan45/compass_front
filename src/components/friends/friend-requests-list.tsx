@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
-import type { ImageSourcePropType } from 'react-native';
 import { Animated, Image, Pressable, StyleSheet, View } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
 import { AppText as Text } from '@/components/app-text';
 import { commonImages } from '@/constants/assets';
@@ -16,19 +16,26 @@ import {
 } from '@/constants/design';
 
 export type FriendRequest = {
+  avatarUrl: string | null;
+  email: string;
   id: string;
   displayName: string;
-  mutualFriends: number;
   username: string;
 };
 
 type FriendRequestsListProps = {
-  onAccept: (id: string) => void;
-  onReject: (id: string) => void;
+  onAccept: (id: string) => Promise<boolean>;
+  onReject: (id: string) => Promise<boolean>;
+  onResolved: (id: string) => void;
   requests: FriendRequest[];
 };
 
-export function FriendRequestsList({ onAccept, onReject, requests }: FriendRequestsListProps) {
+export function FriendRequestsList({
+  onAccept,
+  onReject,
+  onResolved,
+  requests,
+}: FriendRequestsListProps) {
   if (requests.length === 0) {
     return <RequestsEmptyState />;
   }
@@ -40,6 +47,7 @@ export function FriendRequestsList({ onAccept, onReject, requests }: FriendReque
           key={request.id}
           onAccept={() => onAccept(request.id)}
           onReject={() => onReject(request.id)}
+          onResolved={() => onResolved(request.id)}
           request={request}
         />
       ))}
@@ -48,28 +56,39 @@ export function FriendRequestsList({ onAccept, onReject, requests }: FriendReque
 }
 
 type FriendRequestCardProps = {
-  onAccept: () => void;
-  onReject: () => void;
+  onAccept: () => Promise<boolean>;
+  onReject: () => Promise<boolean>;
+  onResolved: () => void;
   request: FriendRequest;
 };
 
-function FriendRequestCard({ onAccept, onReject, request }: FriendRequestCardProps) {
+function FriendRequestCard({ onAccept, onReject, onResolved, request }: FriendRequestCardProps) {
   const [resolving, setResolving] = useState(false);
   const fadeValue = useRef(new Animated.Value(1)).current;
+  const avatarSource: ImageSourcePropType = request.avatarUrl
+    ? { uri: request.avatarUrl }
+    : commonImages.defaultProfile;
 
-  function resolveWithFade(onResolve: () => void) {
+  async function resolveWithFade(onResolve: () => Promise<boolean>) {
     if (resolving) {
       return;
     }
 
     setResolving(true);
+    const resolved = await onResolve();
+
+    if (!resolved) {
+      setResolving(false);
+      return;
+    }
+
     Animated.timing(fadeValue, {
       toValue: 0,
       duration: 220,
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished) {
-        onResolve();
+        onResolved();
       }
     });
   }
@@ -97,11 +116,7 @@ function FriendRequestCard({ onAccept, onReject, request }: FriendRequestCardPro
         },
       ]}
     >
-      <Image
-        accessibilityIgnoresInvertColors
-        source={commonImages.defaultProfile}
-        style={styles.avatar}
-      />
+      <Image accessibilityIgnoresInvertColors source={avatarSource} style={styles.avatar} />
 
       <View style={styles.identity}>
         <Text numberOfLines={1} style={styles.name}>
@@ -110,12 +125,9 @@ function FriendRequestCard({ onAccept, onReject, request }: FriendRequestCardPro
         <Text numberOfLines={1} style={styles.username}>
           @{request.username}
         </Text>
-        <View style={styles.mutualRow}>
-          <AvatarStack />
-          <Text numberOfLines={1} style={styles.mutualText}>
-            {request.mutualFriends} mutual friends
-          </Text>
-        </View>
+        <Text numberOfLines={1} style={styles.email}>
+          {request.email}
+        </Text>
       </View>
 
       <View style={styles.actions}>
@@ -137,27 +149,6 @@ function FriendRequestCard({ onAccept, onReject, request }: FriendRequestCardPro
         />
       </View>
     </Animated.View>
-  );
-}
-
-function AvatarStack() {
-  const sources: ImageSourcePropType[] = [
-    commonImages.defaultProfile,
-    commonImages.defaultStreakProfile,
-    commonImages.defaultProfile,
-  ];
-
-  return (
-    <View style={styles.avatarStack}>
-      {sources.map((source, index) => (
-        <Image
-          accessibilityIgnoresInvertColors
-          key={index}
-          source={source}
-          style={[styles.mutualAvatar, index > 0 && styles.stackedAvatar]}
-        />
-      ))}
-    </View>
   );
 }
 
@@ -258,35 +249,11 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     fontWeight: fontWeights.medium,
   },
-  mutualRow: {
-    minWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.one,
-    paddingTop: spacing.compactGap,
-  },
-  avatarStack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 2,
-  },
-  mutualAvatar: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderColor: colors.surface,
-    borderWidth: 1,
-    backgroundColor: '#e9edf2',
-  },
-  stackedAvatar: {
-    marginLeft: -6,
-  },
-  mutualText: {
-    minWidth: 0,
-    flex: 1,
+  email: {
     color: colors.muted,
     fontSize: typography.compact,
     fontWeight: fontWeights.semiBold,
+    paddingTop: spacing.compactGap,
   },
   actions: {
     flexDirection: 'row',

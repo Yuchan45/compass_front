@@ -28,6 +28,7 @@ Read only the reference files needed for the task:
 - Use TypeScript types from `src/types` for shared API contracts.
 - Use `src/services/api` for HTTP calls and `src/services/storage` for token persistence.
 - Use `AuthProvider`/`useAuth` for session state instead of duplicating token state in screens.
+- Use `ToastProvider`/`useToast` for brief global feedback such as API failures or completed actions; keep toast messages short and use `alert`, `warning`, `success`, or `info` modes.
 - Use `src/constants/design.ts` for colors, spacing, radii, and typography.
 - Write all visible UI copy, navigation labels, placeholders, accessibility labels, and user-facing messages in English.
 - Keep visible UI text concise and user-facing; do not expose debug URLs except when intentionally useful in dev screens.

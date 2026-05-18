@@ -8,6 +8,7 @@ import { Platform } from 'react-native';
 
 import { fontAssets } from '@/constants/fonts';
 import { AuthProvider } from '@/contexts/auth-context';
+import { ToastProvider } from '@/contexts/toast-context';
 import {
   closeGoogleAuthPopup,
   hideGoogleAuthPopupDocument,
@@ -38,8 +39,10 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }} />
-      <StatusBar style="dark" />
+      <ToastProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+        <StatusBar style="dark" />
+      </ToastProvider>
     </AuthProvider>
   );
 }

@@ -4,12 +4,16 @@ This repository includes local Codex skills under `.codex/skills`. They do not c
 
 ## Available Skills
 
-| Skill | Use it for |
-| --- | --- |
-| `$compass-frontend` | Implement or modify Compass frontend code while respecting Expo Router, React Native, TypeScript, auth, API, storage, responsive UI, and design conventions. |
-| `$compass-documentation` | Keep README, docs, API integration notes, diagrams, changelog, route/screen docs, and developer workflow documentation synchronized with frontend changes. |
-| `$compass-code-review` | Review PRs or diffs for Expo Router, React Native, auth, API integration, responsive UI, accessibility, performance, naming, and verification risk. |
-| `$compass-commit` | Prepare safe atomic commits with explicit staging, checks, `feat(scope): description` commit messages, and user approval before committing. |
+| Skill                    | Use it for                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `$compass-frontend`      | Implement or modify Compass frontend code while respecting Expo Router, React Native, TypeScript, auth, API, storage, responsive UI, and design conventions. |
+| `$compass-documentation` | Keep README, docs, API integration notes, diagrams, changelog, route/screen docs, and developer workflow documentation synchronized with frontend changes.   |
+| `$compass-code-review`   | Review PRs or diffs for Expo Router, React Native, auth, API integration, responsive UI, accessibility, performance, naming, and verification risk.          |
+| `$compass-commit`        | Prepare safe atomic commits with explicit staging, checks, `feat(scope): description` commit messages, and user approval before committing.                  |
+
+## UI Feedback Convention
+
+Use the shared toast system for brief global feedback in mobile flows. `ToastProvider` is mounted at the app root, and features can call `useToast` with a short message plus one of the standard modes: `alert`, `warning`, `success`, or `info`.
 
 ## Recommended Workflow
 

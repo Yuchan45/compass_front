@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppText as Text } from '@/components/app-text';
 import { BottomNavigationBar } from '@/components/bottom-navigation-bar';
 import {
   type Friend,
@@ -13,7 +14,15 @@ import {
   FriendsSectionHeader,
   type FriendsTab,
 } from '@/components/friends';
-import { colors, dimensions, spacing } from '@/constants/design';
+import { colors, dimensions, fontWeights, opacity, spacing, typography } from '@/constants/design';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/contexts/toast-context';
+import {
+  acceptFriendshipRequest,
+  declineFriendshipRequest,
+  getReceivedPendingFriendshipsRequest,
+} from '@/services/api/friendships';
+import type { Friendship } from '@/types/friendships';
 
 const initialFriends: Friend[] = [
   {
@@ -36,62 +45,39 @@ const initialFriends: Friend[] = [
   },
 ];
 
-const initialFriendRequests: FriendRequest[] = [
-  {
-    id: 'maria-gonzalez',
-    displayName: 'Maria Gonzalez',
-    username: 'maria.gonzalez',
-    mutualFriends: 12,
-  },
-  {
-    id: 'tomas-rodriguez',
-    displayName: 'Tomas Rodriguez',
-    username: 'tomas.rodriguez',
-    mutualFriends: 8,
-  },
-  {
-    id: 'julieta-alvarez',
-    displayName: 'Julieta Alvarez',
-    username: 'julieta.alvarez',
-    mutualFriends: 6,
-  },
-  {
-    id: 'mateo-lopez',
-    displayName: 'Mateo Lopez',
-    username: 'mateolopez',
-    mutualFriends: 10,
-  },
-  {
-    id: 'camila-torres',
-    displayName: 'Camila Torres',
-    username: 'camila.torres',
-    mutualFriends: 7,
-  },
-  {
-    id: 'nicolas-fernandez',
-    displayName: 'Nicolas Fernandez',
-    username: 'nicolasfdez',
-    mutualFriends: 5,
-  },
-  {
-    id: 'sofia-martinez',
-    displayName: 'Sofia Martinez',
-    username: 'sofia.martinez',
-    mutualFriends: 9,
-  },
-  {
-    id: 'lucas-pereyra',
-    displayName: 'Lucas Pereyra',
-    username: 'lucaspereyra',
-    mutualFriends: 4,
-  },
-];
-
 export function FriendsScreen() {
+  const { session } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<FriendsTab>('search');
   const [query, setQuery] = useState('');
   const [friends] = useState(initialFriends);
-  const [friendRequests, setFriendRequests] = useState(initialFriendRequests);
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+
+  const loadFriendRequests = useCallback(async () => {
+    if (!session) {
+      return;
+    }
+
+    setRequestsLoading(true);
+    setRequestsError(null);
+
+    try {
+      const friendships = await getReceivedPendingFriendshipsRequest(session.accessToken);
+      setFriendRequests(friendships.map(mapReceivedFriendRequest));
+    } catch (caughtError) {
+      const message = getErrorMessage(caughtError, 'Could not load friend requests.');
+      setRequestsError(message);
+      showToast({ message, mode: 'alert' });
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, [session, showToast]);
+
+  useEffect(() => {
+    void loadFriendRequests();
+  }, [loadFriendRequests]);
 
   const normalizedQuery = query.trim().toLowerCase();
   const visibleFriends = useMemo(() => {
@@ -120,8 +106,48 @@ export function FriendsScreen() {
     });
   }, [friendRequests, normalizedQuery]);
 
-  function resolveRequest(id: string) {
+  async function acceptReceivedRequest(id: string) {
+    if (!session) {
+      return false;
+    }
+
+    setRequestsError(null);
+
+    try {
+      await acceptFriendshipRequest(session.accessToken, id);
+      return true;
+    } catch (caughtError) {
+      const message = getErrorMessage(caughtError, 'Could not accept friend request.');
+      setRequestsError(message);
+      showToast({ message, mode: 'alert' });
+      return false;
+    }
+  }
+
+  async function declineReceivedRequest(id: string) {
+    if (!session) {
+      return false;
+    }
+
+    setRequestsError(null);
+
+    try {
+      await declineFriendshipRequest(session.accessToken, id);
+      return true;
+    } catch (caughtError) {
+      const message = getErrorMessage(caughtError, 'Could not reject friend request.');
+      setRequestsError(message);
+      showToast({ message, mode: 'alert' });
+      return false;
+    }
+  }
+
+  function removeRequest(id: string) {
     setFriendRequests((currentRequests) => currentRequests.filter((request) => request.id !== id));
+  }
+
+  if (!session) {
+    return null;
   }
 
   return (
@@ -143,11 +169,24 @@ export function FriendsScreen() {
               {activeTab === 'requests' ? (
                 <>
                   <FriendRequestsSectionHeader count={visibleRequests.length} />
-                  <FriendRequestsList
-                    onAccept={resolveRequest}
-                    onReject={resolveRequest}
-                    requests={visibleRequests}
-                  />
+                  {requestsLoading ? (
+                    <RequestsLoadingState />
+                  ) : (
+                    <>
+                      {requestsError ? (
+                        <RequestsErrorState
+                          message={requestsError}
+                          onRetry={() => void loadFriendRequests()}
+                        />
+                      ) : null}
+                      <FriendRequestsList
+                        onAccept={acceptReceivedRequest}
+                        onReject={declineReceivedRequest}
+                        onResolved={removeRequest}
+                        requests={visibleRequests}
+                      />
+                    </>
+                  )}
                 </>
               ) : (
                 <>
@@ -160,6 +199,50 @@ export function FriendsScreen() {
         </ScrollView>
       </SafeAreaView>
       <BottomNavigationBar activeItem="friends" />
+    </View>
+  );
+}
+
+function mapReceivedFriendRequest(friendship: Friendship): FriendRequest {
+  return {
+    avatarUrl: friendship.requester.avatarUrl,
+    displayName: friendship.requester.displayName,
+    email: friendship.requester.email,
+    id: friendship.id,
+    username: friendship.requester.username,
+  };
+}
+
+function getErrorMessage(caughtError: unknown, fallback: string) {
+  return caughtError instanceof Error ? caughtError.message : fallback;
+}
+
+function RequestsLoadingState() {
+  return (
+    <View style={styles.statusCard}>
+      <ActivityIndicator color={colors.navActive} />
+      <Text style={styles.statusText}>Loading friend requests...</Text>
+    </View>
+  );
+}
+
+type RequestsErrorStateProps = {
+  message: string;
+  onRetry: () => void;
+};
+
+function RequestsErrorState({ message, onRetry }: RequestsErrorStateProps) {
+  return (
+    <View style={styles.errorCard}>
+      <Text style={styles.errorText}>{message}</Text>
+      <Pressable
+        accessibilityLabel="Retry loading friend requests"
+        accessibilityRole="button"
+        onPress={onRetry}
+        style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+      >
+        <Text style={styles.retryText}>Retry</Text>
+      </Pressable>
     </View>
   );
 }
@@ -186,5 +269,45 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: spacing.two,
+  },
+  statusCard: {
+    minHeight: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.two,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    padding: spacing.four,
+  },
+  statusText: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: fontWeights.semiBold,
+  },
+  errorCard: {
+    gap: spacing.two,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    padding: spacing.three,
+  },
+  errorText: {
+    color: colors.danger,
+    fontSize: typography.small,
+    fontWeight: fontWeights.bold,
+  },
+  retryButton: {
+    alignSelf: 'flex-start',
+    borderRadius: 16,
+    backgroundColor: colors.navActive,
+    paddingHorizontal: spacing.three,
+    paddingVertical: spacing.one,
+  },
+  retryText: {
+    color: colors.surface,
+    fontSize: typography.caption,
+    fontWeight: fontWeights.extraBold,
+  },
+  pressed: {
+    opacity: opacity.pressed,
   },
 });

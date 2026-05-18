@@ -7,6 +7,7 @@ Use this when screens, components, navigation, design constants, assets, or user
 - Route and screen purpose when a new screen is added.
 - Navigation flow if it affects onboarding or product understanding.
 - Reusable UI conventions when shared components/design constants change.
+- Shared transient feedback patterns, including `ToastProvider`, `useToast`, and toast modes.
 - Platform-specific behavior for web, iOS, Android, or physical devices.
 - Accessibility or interaction patterns when they are part of the feature.
 

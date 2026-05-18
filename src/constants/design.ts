@@ -1,20 +1,28 @@
 export const colors = {
   background: '#f4f7f3',
+  alert: '#dc2626',
+  alertSoft: '#fee2e2',
   border: '#cfdbd5',
   black: '#111111',
   blackSoft: '#151515',
   danger: '#b42318',
   google: '#4285f4',
+  info: '#2563eb',
+  infoSoft: '#dbeafe',
   muted: '#6b7c74',
   navActive: '#6d4ee8',
   navInactive: '#4f5965',
   primary: '#0f766e',
   primarySoft: '#d7f0ea',
   secondary: '#c05621',
+  success: '#16a34a',
+  successSoft: '#dcfce7',
   surface: '#ffffff',
   text: '#10231f',
   textSoft: '#40534d',
   transparent: 'transparent',
+  warning: '#ca8a04',
+  warningSoft: '#fef3c7',
   whiteAlpha16: 'rgba(255, 255, 255, 0.16)',
   whiteAlpha34: 'rgba(255, 255, 255, 0.34)',
   whiteAlpha42: 'rgba(255, 255, 255, 0.42)',
@@ -224,4 +232,26 @@ export const authTheme = {
     subtitle: typography.authSubtitle,
     title: typography.authTitle,
   },
+};
+
+export const toastTheme = {
+  colors: {
+    alert: {
+      accent: colors.alert,
+      background: colors.alertSoft,
+    },
+    info: {
+      accent: colors.info,
+      background: colors.infoSoft,
+    },
+    success: {
+      accent: colors.success,
+      background: colors.successSoft,
+    },
+    warning: {
+      accent: colors.warning,
+      background: colors.warningSoft,
+    },
+  },
+  durationMs: 3000,
 };

@@ -72,6 +72,10 @@ See [docs/codex-skills.md](docs/codex-skills.md) for the local Codex skills and 
 
 See [docs/api-integration.md](docs/api-integration.md) for frontend API services, auth token usage, friendship endpoints, and error handling.
 
+## UI System
+
+See [docs/ui-system.md](docs/ui-system.md) for shared UI component and validation conventions.
+
 ## Structure
 
 - `src/app`: Expo Router entry.

@@ -163,6 +163,8 @@ export const authTheme = {
     subduedText: colors.whiteAlpha78,
     textOnControl: colors.blackSoft,
     transparent: colors.transparent,
+    validationError: colors.alert,
+    validationSuccess: colors.success,
   },
   dimensions: {
     brandLogoSize: dimensions.authBrandLogoSize,

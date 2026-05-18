@@ -35,6 +35,7 @@ export function EditProfileScreen() {
   const [avatarUrl, setAvatarUrl] = useState(session?.user.avatarUrl ?? '');
   const [displayName, setDisplayName] = useState(session?.user.displayName ?? '');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [username, setUsername] = useState(session?.user.username ?? '');
 
   if (!session) {
     return null;
@@ -43,11 +44,18 @@ export function EditProfileScreen() {
   const { user } = session;
   const nextAvatarUrl = avatarUrl.trim();
   const nextDisplayName = displayName.trim();
+  const nextUsername = username.trim();
+  const displayNameValidation = getDisplayNameValidation(displayName);
+  const usernameValidation = getUsernameValidation(username);
   const avatarSource: ImageSourcePropType = nextAvatarUrl
     ? { uri: nextAvatarUrl }
     : commonImages.defaultProfile;
   const avatarPayload = nextAvatarUrl || null;
-  const hasChanges = nextDisplayName !== user.displayName || avatarPayload !== user.avatarUrl;
+  const hasChanges =
+    nextDisplayName !== user.displayName ||
+    nextUsername !== user.username ||
+    avatarPayload !== user.avatarUrl;
+  const hasInvalidProfileFields = !displayNameValidation.valid || !usernameValidation.valid;
   const visibleError = localError ?? error;
 
   function returnToProfile() {
@@ -55,8 +63,8 @@ export function EditProfileScreen() {
   }
 
   async function submitProfile() {
-    if (!nextDisplayName) {
-      setLocalError('Enter a display name.');
+    if (hasInvalidProfileFields) {
+      setLocalError('Complete the highlighted fields before saving.');
       return;
     }
 
@@ -65,6 +73,7 @@ export function EditProfileScreen() {
     const updated = await updateProfile({
       avatarUrl: avatarPayload,
       displayName: nextDisplayName,
+      username: nextUsername,
     });
 
     if (updated) {
@@ -98,7 +107,7 @@ export function EditProfileScreen() {
               <View style={styles.headerText}>
                 <Text style={styles.title}>Edit Profile</Text>
                 <Text numberOfLines={1} style={styles.subtitle}>
-                  @{user.username}
+                  @{nextUsername || user.username}
                 </Text>
               </View>
             </View>
@@ -110,7 +119,7 @@ export function EditProfileScreen() {
                   {nextDisplayName || user.displayName}
                 </Text>
                 <Text numberOfLines={1} style={styles.previewEmail}>
-                  {user.email}
+                  @{nextUsername || user.username}
                 </Text>
               </View>
             </View>
@@ -121,7 +130,19 @@ export function EditProfileScreen() {
                 label="Display name"
                 onChangeText={setDisplayName}
                 placeholder="Your name"
+                validationMessage={displayNameValidation.message}
+                validationState={displayNameValidation.state}
                 value={displayName}
+              />
+              <TextField
+                autoCapitalize="none"
+                autoComplete="username"
+                label="Username"
+                onChangeText={setUsername}
+                placeholder="yu_nakasone"
+                validationMessage={usernameValidation.message}
+                validationState={usernameValidation.state}
+                value={username}
               />
               <TextField
                 autoCapitalize="none"
@@ -134,7 +155,11 @@ export function EditProfileScreen() {
               {visibleError && <Text style={styles.error}>{visibleError}</Text>}
 
               <View style={styles.actions}>
-                <Button disabled={!hasChanges || loading} loading={loading} onPress={submitProfile}>
+                <Button
+                  disabled={!hasChanges || hasInvalidProfileFields || loading}
+                  loading={loading}
+                  onPress={submitProfile}
+                >
                   Save
                 </Button>
                 <Button disabled={loading} onPress={returnToProfile} variant="secondary">
@@ -147,6 +172,64 @@ export function EditProfileScreen() {
       </SafeAreaView>
     </KeyboardAvoidingView>
   );
+}
+
+type ValidationState = 'default' | 'error' | 'success';
+
+type ValidationResult = {
+  message: string | null;
+  state: ValidationState;
+  valid: boolean;
+};
+
+function getDisplayNameValidation(value: string): ValidationResult {
+  const displayName = value.trim();
+
+  if (!displayName) {
+    return validationError('Enter a display name.');
+  }
+
+  if (displayName.length > 80) {
+    return validationError('Keep display name under 80 characters.');
+  }
+
+  return validationSuccess;
+}
+
+function getUsernameValidation(value: string): ValidationResult {
+  const username = value.trim();
+
+  if (!username) {
+    return validationError('Choose username between 3-30 characters.');
+  }
+
+  if (username.length < 3 || username.length > 30) {
+    return validationError('Choose username between 3-30 characters.');
+  }
+
+  if (username !== username.toLowerCase()) {
+    return validationError('Must be all lowercase.');
+  }
+
+  if (!/^[a-z0-9_.]+$/.test(username)) {
+    return validationError('Can only include letters, numbers, dots, or underscores.');
+  }
+
+  return validationSuccess;
+}
+
+const validationSuccess: ValidationResult = {
+  message: null,
+  state: 'success',
+  valid: true,
+};
+
+function validationError(message: string): ValidationResult {
+  return {
+    message,
+    state: 'error',
+    valid: false,
+  };
 }
 
 const styles = StyleSheet.create({

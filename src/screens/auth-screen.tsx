@@ -45,6 +45,7 @@ export function AuthScreen() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
+  const [registerUsername, setRegisterUsername] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -59,6 +60,10 @@ export function AuthScreen() {
 
   const isRegister = mode === 'register';
   const googleAuthConfigured = googleClientId.length > 0;
+  const registerEmailValidation = getRegisterEmailValidation(registerEmail);
+  const registerUsernameValidation = getRegisterUsernameValidation(registerUsername);
+  const registerPasswordValidation = getRegisterPasswordValidation(registerPassword);
+  const confirmPasswordValidation = getConfirmPasswordValidation(registerPassword, confirmPassword);
   const visibleError = localError ?? error;
 
   useEffect(() => {
@@ -131,13 +136,18 @@ export function AuthScreen() {
 
   async function submitRegister() {
     const email = registerEmail.trim().toLowerCase();
+    const username = registerUsername.trim();
 
-    if (!email || registerPassword.length < 8) {
-      setLocalError('Enter your email and a password with at least 8 characters.');
+    if (
+      !registerEmailValidation.valid ||
+      !registerUsernameValidation.valid ||
+      !registerPasswordValidation.valid
+    ) {
+      setLocalError('Complete the highlighted fields before signing up.');
       return;
     }
 
-    if (registerPassword !== confirmPassword) {
+    if (!confirmPasswordValidation.valid) {
       setLocalError('Passwords do not match.');
       return;
     }
@@ -147,7 +157,7 @@ export function AuthScreen() {
       displayName: getDisplayNameFromEmail(email),
       email,
       password: registerPassword,
-      username: getUsernameFromEmail(email),
+      username,
     });
 
     if (registered) {
@@ -219,7 +229,18 @@ export function AuthScreen() {
                         keyboardType="email-address"
                         onChangeText={setRegisterEmail}
                         placeholder="Email Address"
+                        validationMessage={registerEmailValidation.message}
+                        validationState={registerEmailValidation.state}
                         value={registerEmail}
+                      />
+                      <AuthField
+                        accessibilityLabel="Username"
+                        autoComplete="username"
+                        onChangeText={setRegisterUsername}
+                        placeholder="Username"
+                        validationMessage={registerUsernameValidation.message}
+                        validationState={registerUsernameValidation.state}
+                        value={registerUsername}
                       />
                       <AuthField
                         accessibilityLabel="Password"
@@ -233,6 +254,8 @@ export function AuthScreen() {
                           />
                         }
                         secureTextEntry={!showRegisterPassword}
+                        validationMessage={registerPasswordValidation.message}
+                        validationState={registerPasswordValidation.state}
                         value={registerPassword}
                       />
                       <AuthField
@@ -247,6 +270,8 @@ export function AuthScreen() {
                           />
                         }
                         secureTextEntry={!showConfirmPassword}
+                        validationMessage={confirmPasswordValidation.message}
+                        validationState={confirmPasswordValidation.state}
                         value={confirmPassword}
                       />
                     </>
@@ -412,8 +437,12 @@ type AuthFieldProps = {
   placeholder: string;
   rightContent?: ReactNode;
   secureTextEntry?: boolean;
+  validationMessage?: string | null;
+  validationState?: ValidationState;
   value: string;
 };
+
+type ValidationState = 'default' | 'error' | 'success';
 
 function AuthField({
   accessibilityLabel,
@@ -423,24 +452,35 @@ function AuthField({
   placeholder,
   rightContent,
   secureTextEntry = false,
+  validationMessage,
+  validationState = 'default',
   value,
 }: AuthFieldProps) {
   return (
-    <View style={styles.fieldBox}>
-      <TextInput
-        accessibilityLabel={accessibilityLabel}
-        autoCapitalize="none"
-        autoComplete={autoComplete}
-        keyboardType={keyboardType}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={authColors.fieldPlaceholder}
-        secureTextEntry={secureTextEntry}
-        selectionColor={authColors.primaryText}
-        style={[styles.fieldInput, rightContent ? styles.fieldInputWithAction : null]}
-        value={value}
-      />
-      {rightContent && <View style={styles.fieldAction}>{rightContent}</View>}
+    <View style={styles.fieldGroup}>
+      <View
+        style={[
+          styles.fieldBox,
+          validationState === 'error' && styles.fieldBoxError,
+          validationState === 'success' && styles.fieldBoxSuccess,
+        ]}
+      >
+        <TextInput
+          accessibilityLabel={accessibilityLabel}
+          autoCapitalize="none"
+          autoComplete={autoComplete}
+          keyboardType={keyboardType}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={authColors.fieldPlaceholder}
+          secureTextEntry={secureTextEntry}
+          selectionColor={authColors.primaryText}
+          style={[styles.fieldInput, rightContent ? styles.fieldInputWithAction : null]}
+          value={value}
+        />
+        {rightContent && <View style={styles.fieldAction}>{rightContent}</View>}
+      </View>
+      {validationMessage ? <Text style={styles.fieldHint}>{validationMessage}</Text> : null}
     </View>
   );
 }
@@ -550,15 +590,96 @@ function getGooglePromptOptions(): AuthRequestPromptOptions | undefined {
   };
 }
 
-function getUsernameFromEmail(email: string) {
-  const sanitized = email
-    .toLowerCase()
-    .replace(/@/g, '_')
-    .replace(/[^a-z0-9_]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_+|_+$/g, '');
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  return (sanitized.length >= 3 ? sanitized : `user_${sanitized}`).slice(0, 30);
+type ValidationResult = {
+  message: string | null;
+  state: ValidationState;
+  valid: boolean;
+};
+
+function getRegisterEmailValidation(value: string): ValidationResult {
+  const email = value.trim();
+
+  if (!email) {
+    return defaultValidation;
+  }
+
+  if (email.length > 120) {
+    return validationError('Keep email under 120 characters.');
+  }
+
+  if (!emailPattern.test(email)) {
+    return validationError('Enter a valid email address.');
+  }
+
+  return validationSuccess;
+}
+
+function getRegisterUsernameValidation(value: string): ValidationResult {
+  const username = value.trim();
+
+  if (!username) {
+    return defaultValidation;
+  }
+
+  if (username.length < 3 || username.length > 30) {
+    return validationError('Choose username between 3-30 characters.');
+  }
+
+  if (username !== username.toLowerCase()) {
+    return validationError('Must be all lowercase.');
+  }
+
+  if (!/^[a-z0-9_.]+$/.test(username)) {
+    return validationError('Can only include letters, numbers, dots, or underscores.');
+  }
+
+  return validationSuccess;
+}
+
+function getRegisterPasswordValidation(value: string): ValidationResult {
+  if (!value) {
+    return defaultValidation;
+  }
+
+  if (value.length < 8 || value.length > 128) {
+    return validationError('Choose password between 8-128 characters.');
+  }
+
+  return validationSuccess;
+}
+
+function getConfirmPasswordValidation(password: string, confirmPassword: string): ValidationResult {
+  if (!confirmPassword) {
+    return defaultValidation;
+  }
+
+  if (password !== confirmPassword) {
+    return validationError('Passwords do not match.');
+  }
+
+  return validationSuccess;
+}
+
+const defaultValidation: ValidationResult = {
+  message: null,
+  state: 'default',
+  valid: false,
+};
+
+const validationSuccess: ValidationResult = {
+  message: null,
+  state: 'success',
+  valid: true,
+};
+
+function validationError(message: string): ValidationResult {
+  return {
+    message,
+    state: 'error',
+    valid: false,
+  };
 }
 
 function getDisplayNameFromEmail(email: string) {
@@ -646,6 +767,9 @@ const styles = StyleSheet.create({
   form: {
     gap: authSpacing.formGap,
   },
+  fieldGroup: {
+    gap: 5,
+  },
   fieldBox: {
     minHeight: authDimensions.fieldMinHeight,
     justifyContent: 'center',
@@ -653,6 +777,12 @@ const styles = StyleSheet.create({
     borderColor: authColors.fieldBorder,
     borderWidth: borders.defaultWidth,
     backgroundColor: authColors.fieldBackground,
+  },
+  fieldBoxError: {
+    borderColor: authColors.validationError,
+  },
+  fieldBoxSuccess: {
+    borderColor: authColors.validationSuccess,
   },
   fieldInput: {
     minHeight: authDimensions.fieldInputMinHeight,
@@ -670,6 +800,13 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     justifyContent: 'center',
+  },
+  fieldHint: {
+    color: authColors.validationError,
+    fontSize: authTypography.compact,
+    fontWeight: authFontWeights.error,
+    lineHeight: 14,
+    paddingHorizontal: authSpacing.compactGap,
   },
   passwordToggle: {
     minWidth: authDimensions.passwordToggleMinWidth,

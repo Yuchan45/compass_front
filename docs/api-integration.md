@@ -14,6 +14,10 @@ Auth requests live in `src/services/api/auth.ts`.
 
 The backend returns a JWT access token. The frontend persists it through `src/services/storage/token-storage.ts` and sends it as a Bearer token on authenticated requests.
 
+Registration sends a user-selected `username`. Usernames must be 3-30 characters using only lowercase letters, numbers, underscores, or dots.
+
+Profile updates can also send `username` through `PATCH /users/me`; the frontend applies the same local validation before submitting.
+
 ## Friendships
 
 Friendship requests live in `src/services/api/friendships.ts`.

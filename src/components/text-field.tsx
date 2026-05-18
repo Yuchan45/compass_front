@@ -19,6 +19,8 @@ type TextFieldProps = {
   onChangeText: (value: string) => void;
   placeholder?: string;
   secureTextEntry?: boolean;
+  validationMessage?: string | null;
+  validationState?: 'default' | 'error' | 'success';
   value: string;
 };
 
@@ -30,6 +32,8 @@ export function TextField({
   onChangeText,
   placeholder,
   secureTextEntry = false,
+  validationMessage,
+  validationState = 'default',
   value,
 }: TextFieldProps) {
   return (
@@ -43,9 +47,14 @@ export function TextField({
         placeholder={placeholder}
         placeholderTextColor={colors.muted}
         secureTextEntry={secureTextEntry}
-        style={styles.input}
+        style={[
+          styles.input,
+          validationState === 'error' && styles.inputError,
+          validationState === 'success' && styles.inputSuccess,
+        ]}
         value={value}
       />
+      {validationMessage ? <Text style={styles.validationMessage}>{validationMessage}</Text> : null}
     </View>
   );
 }
@@ -68,5 +77,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: typography.body,
     paddingHorizontal: spacing.three,
+  },
+  inputError: {
+    borderColor: colors.alert,
+  },
+  inputSuccess: {
+    borderColor: colors.success,
+  },
+  validationMessage: {
+    color: colors.alert,
+    fontSize: typography.caption,
+    fontWeight: fontWeights.bold,
   },
 });

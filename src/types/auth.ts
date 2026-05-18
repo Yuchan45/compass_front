@@ -35,4 +35,5 @@ export type RegisterPayload = {
 export type UpdateProfilePayload = {
   avatarUrl?: string | null;
   displayName?: string;
+  username?: string;
 };

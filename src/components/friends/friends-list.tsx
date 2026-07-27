@@ -24,9 +24,10 @@ export type Friend = {
 
 type FriendsListProps = {
   friends: Friend[];
+  onProfilePress?: (friend: Friend) => void;
 };
 
-export function FriendsList({ friends }: FriendsListProps) {
+export function FriendsList({ friends, onProfilePress }: FriendsListProps) {
   if (friends.length === 0) {
     return <FriendsNoResults />;
   }
@@ -34,7 +35,7 @@ export function FriendsList({ friends }: FriendsListProps) {
   return (
     <View style={styles.list}>
       {friends.map((friend) => (
-        <FriendCard friend={friend} key={friend.id} />
+        <FriendCard friend={friend} key={friend.id} onProfilePress={onProfilePress} />
       ))}
     </View>
   );
@@ -42,9 +43,10 @@ export function FriendsList({ friends }: FriendsListProps) {
 
 type FriendCardProps = {
   friend: Friend;
+  onProfilePress?: (friend: Friend) => void;
 };
 
-function FriendCard({ friend }: FriendCardProps) {
+function FriendCard({ friend, onProfilePress }: FriendCardProps) {
   return (
     <View style={styles.card}>
       <AvatarImage avatarUrl={friend.avatarUrl} style={styles.avatar} />
@@ -64,6 +66,7 @@ function FriendCard({ friend }: FriendCardProps) {
       <Pressable
         accessibilityLabel={`Open ${friend.displayName} profile`}
         accessibilityRole="button"
+        onPress={() => onProfilePress?.(friend)}
         style={({ pressed }) => [styles.profileButton, pressed && styles.pressed]}
       >
         <MaterialCommunityIcons color={colors.navActive} name="account" size={22} />

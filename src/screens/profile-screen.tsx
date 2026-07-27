@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomNavigationBar } from '@/components/bottom-navigation-bar';
@@ -13,10 +14,29 @@ import {
 } from '@/components/profile';
 import { colors, dimensions, spacing } from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
+import { getAcceptedFriendsRequest } from '@/services/api/friendships';
 
 export function ProfileScreen() {
   const { session } = useAuth();
   const router = useRouter();
+  const [friendsCount, setFriendsCount] = useState(0);
+
+  const loadFriendsCount = useCallback(async () => {
+    if (!session) {
+      return;
+    }
+
+    try {
+      const response = await getAcceptedFriendsRequest(session.accessToken);
+      setFriendsCount(response.data.length);
+    } catch {
+      setFriendsCount(0);
+    }
+  }, [session]);
+
+  useEffect(() => {
+    void loadFriendsCount();
+  }, [loadFriendsCount]);
 
   if (!session) {
     return null;
@@ -38,7 +58,10 @@ export function ProfileScreen() {
             />
 
             <View style={styles.body}>
-              <ProfileStats />
+              <ProfileStats
+                friends={friendsCount}
+                onFriendsPress={() => router.push('/profile-friends')}
+              />
 
               <ProfileSection title="Top Streaks">
                 <TopStreaks />

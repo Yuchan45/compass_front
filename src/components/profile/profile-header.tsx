@@ -6,6 +6,7 @@ import { AppText as Text } from '@/components/app-text';
 import { colors, fontWeights, opacity, spacing, typography } from '@/constants/design';
 
 type ProfileHeaderProps = {
+  actionsVisible?: boolean;
   avatarUrl: string | null;
   displayName: string;
   email: string;
@@ -20,6 +21,7 @@ type HeaderIconButtonProps = {
 };
 
 export function ProfileHeader({
+  actionsVisible = true,
   avatarUrl,
   displayName,
   email,
@@ -33,11 +35,17 @@ export function ProfileHeader({
           <AvatarImage avatarUrl={avatarUrl} style={styles.avatar} />
         </View>
 
-        <View style={styles.actionStack}>
-          <HeaderIconButton accessibilityLabel="Settings" icon="cog" />
-          <HeaderIconButton accessibilityLabel="Edit profile" icon="pencil" onPress={onEditPress} />
-          <HeaderIconButton accessibilityLabel="Open chat" icon="chat-processing" />
-        </View>
+        {actionsVisible ? (
+          <View style={styles.actionStack}>
+            <HeaderIconButton accessibilityLabel="Settings" icon="cog" />
+            <HeaderIconButton
+              accessibilityLabel="Edit profile"
+              icon="pencil"
+              onPress={onEditPress}
+            />
+            <HeaderIconButton accessibilityLabel="Open chat" icon="chat-processing" />
+          </View>
+        ) : null}
 
         <MapPreview />
       </View>

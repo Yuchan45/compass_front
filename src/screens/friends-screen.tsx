@@ -5,13 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText as Text } from '@/components/app-text';
 import { BottomNavigationBar } from '@/components/bottom-navigation-bar';
 import {
-  type Friend,
   type FriendRequest,
   FriendRequestsList,
   FriendRequestsSectionHeader,
   FriendSearchResultsList,
   FriendsHeader,
-  FriendsList,
   FriendsSectionHeader,
   type FriendsTab,
 } from '@/components/friends';
@@ -20,12 +18,12 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/contexts/toast-context';
 import {
   acceptFriendshipRequest,
+  createFriendshipRequest,
   declineFriendshipRequest,
-  getAcceptedFriendsRequest,
   getReceivedPendingFriendshipsRequest,
 } from '@/services/api/friendships';
 import { MIN_USER_SEARCH_LENGTH, searchUsersRequest } from '@/services/api/users';
-import type { AcceptedFriendship, Friendship } from '@/types/friendships';
+import type { Friendship } from '@/types/friendships';
 import type { SearchUserResult } from '@/types/users';
 
 export function FriendsScreen() {
@@ -33,36 +31,14 @@ export function FriendsScreen() {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<FriendsTab>('search');
   const [query, setQuery] = useState('');
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [friendsError, setFriendsError] = useState<string | null>(null);
-  const [friendsLoading, setFriendsLoading] = useState(true);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [requestsError, setRequestsError] = useState<string | null>(null);
   const [requestsLoading, setRequestsLoading] = useState(true);
-  const [submittedQuery, setSubmittedQuery] = useState('');
+  const [addingUserIds, setAddingUserIds] = useState<Set<string>>(() => new Set());
+  const [searchRetryKey, setSearchRetryKey] = useState(0);
   const [userSearchError, setUserSearchError] = useState<string | null>(null);
   const [userSearchLoading, setUserSearchLoading] = useState(false);
   const [userSearchResults, setUserSearchResults] = useState<SearchUserResult[]>([]);
-
-  const loadFriends = useCallback(async () => {
-    if (!session) {
-      return;
-    }
-
-    setFriendsLoading(true);
-    setFriendsError(null);
-
-    try {
-      const response = await getAcceptedFriendsRequest(session.accessToken);
-      setFriends(response.data.map(mapAcceptedFriend));
-    } catch (caughtError) {
-      const message = getErrorMessage(caughtError, 'Could not load friends.');
-      setFriendsError(message);
-      showToast({ message, mode: 'alert' });
-    } finally {
-      setFriendsLoading(false);
-    }
-  }, [session, showToast]);
 
   const loadFriendRequests = useCallback(async () => {
     if (!session) {
@@ -85,9 +61,8 @@ export function FriendsScreen() {
   }, [session, showToast]);
 
   useEffect(() => {
-    void loadFriends();
     void loadFriendRequests();
-  }, [loadFriends, loadFriendRequests]);
+  }, [loadFriendRequests]);
 
   const trimmedQuery = query.trim();
   const normalizedQuery = trimmedQuery.toLowerCase();
@@ -98,17 +73,69 @@ export function FriendsScreen() {
 
     return friendRequests.filter((request) => {
       const displayName = request.displayName.toLowerCase();
+      const email = request.email.toLowerCase();
       const username = request.username.toLowerCase();
 
-      return displayName.includes(normalizedQuery) || username.includes(normalizedQuery);
+      return (
+        displayName.includes(normalizedQuery) ||
+        email.includes(normalizedQuery) ||
+        username.includes(normalizedQuery)
+      );
     });
   }, [friendRequests, normalizedQuery]);
   const helperText =
-    trimmedQuery.length > 0 && trimmedQuery.length < MIN_USER_SEARCH_LENGTH
+    activeTab === 'search' &&
+    trimmedQuery.length > 0 &&
+    trimmedQuery.length < MIN_USER_SEARCH_LENGTH
       ? `Type at least ${MIN_USER_SEARCH_LENGTH} letters to search.`
       : null;
-  const hasSubmittedSearch =
-    submittedQuery.length >= MIN_USER_SEARCH_LENGTH && submittedQuery === trimmedQuery;
+
+  useEffect(() => {
+    if (!session || activeTab !== 'search') {
+      return;
+    }
+
+    const searchQuery = trimmedQuery;
+
+    if (searchQuery.length < MIN_USER_SEARCH_LENGTH) {
+      setUserSearchLoading(false);
+      setUserSearchError(null);
+      setUserSearchResults([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    setUserSearchLoading(true);
+    setUserSearchError(null);
+
+    const timeout = setTimeout(() => {
+      searchUsersRequest(session.accessToken, searchQuery)
+        .then((response) => {
+          if (!cancelled) {
+            setUserSearchResults(response.data);
+          }
+        })
+        .catch((caughtError: unknown) => {
+          if (!cancelled) {
+            const message = getErrorMessage(caughtError, 'Could not search users.');
+            setUserSearchError(message);
+            setUserSearchResults([]);
+            showToast({ message, mode: 'alert' });
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setUserSearchLoading(false);
+          }
+        });
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [activeTab, searchRetryKey, session, showToast, trimmedQuery]);
 
   async function acceptReceivedRequest(id: string) {
     if (!session) {
@@ -119,7 +146,6 @@ export function FriendsScreen() {
 
     try {
       await acceptFriendshipRequest(session.accessToken, id);
-      await loadFriends();
       return true;
     } catch (caughtError) {
       const message = getErrorMessage(caughtError, 'Could not accept friend request.');
@@ -151,46 +177,45 @@ export function FriendsScreen() {
     setFriendRequests((currentRequests) => currentRequests.filter((request) => request.id !== id));
   }
 
-  async function submitUserSearch() {
-    if (!session) {
+  async function addFriend(userId: string) {
+    if (!session || addingUserIds.has(userId)) {
       return;
     }
 
-    const searchQuery = trimmedQuery;
-
-    if (!searchQuery) {
-      clearUserSearch();
-      return;
-    }
-
-    if (searchQuery.length < MIN_USER_SEARCH_LENGTH) {
-      setSubmittedQuery('');
-      setUserSearchError(null);
-      setUserSearchResults([]);
-      return;
-    }
-
-    setSubmittedQuery(searchQuery);
-    setUserSearchLoading(true);
-    setUserSearchError(null);
-    setUserSearchResults([]);
+    setAddingUserIds((currentIds) => new Set(currentIds).add(userId));
 
     try {
-      const response = await searchUsersRequest(session.accessToken, searchQuery);
-      setUserSearchResults(response.data);
+      const friendship = await createFriendshipRequest(session.accessToken, userId);
+
+      setUserSearchResults((currentResults) =>
+        currentResults.map((result) =>
+          result.profile.id === userId
+            ? {
+                ...result,
+                relationship: {
+                  direction: 'sent',
+                  id: friendship.id,
+                  status: friendship.status,
+                },
+              }
+            : result,
+        ),
+      );
+      showToast({ message: 'Friend request sent.', mode: 'success' });
     } catch (caughtError) {
-      const message = getErrorMessage(caughtError, 'Could not search users.');
-      setUserSearchError(message);
-      setUserSearchResults([]);
+      const message = getErrorMessage(caughtError, 'Could not send friend request.');
       showToast({ message, mode: 'alert' });
     } finally {
-      setUserSearchLoading(false);
+      setAddingUserIds((currentIds) => {
+        const nextIds = new Set(currentIds);
+        nextIds.delete(userId);
+        return nextIds;
+      });
     }
   }
 
   function clearUserSearch() {
     setQuery('');
-    setSubmittedQuery('');
     setUserSearchError(null);
     setUserSearchResults([]);
   }
@@ -208,15 +233,38 @@ export function FriendsScreen() {
               activeTab={activeTab}
               onClearSearch={clearUserSearch}
               onQueryChange={setQuery}
-              onRequestsPress={() => setActiveTab('requests')}
-              onSearchPress={() => setActiveTab('search')}
-              onSubmitSearch={submitUserSearch}
-              searchHelperText={activeTab === 'search' ? helperText : null}
+              onTabChange={setActiveTab}
+              searchHelperText={helperText}
               query={query}
               requestCount={friendRequests.length}
             />
 
             <View style={styles.section}>
+              {activeTab === 'search' ? (
+                <>
+                  <FriendsSectionHeader count={userSearchResults.length} title="Search Results" />
+                  {trimmedQuery.length < MIN_USER_SEARCH_LENGTH ? (
+                    <UserSearchIdleState />
+                  ) : userSearchLoading ? (
+                    <UserSearchLoadingState />
+                  ) : (
+                    <>
+                      {userSearchError ? (
+                        <RequestsErrorState
+                          message={userSearchError}
+                          onRetry={() => setSearchRetryKey((currentKey) => currentKey + 1)}
+                        />
+                      ) : null}
+                      <FriendSearchResultsList
+                        addingUserIds={addingUserIds}
+                        onAddFriend={(userId) => void addFriend(userId)}
+                        results={userSearchResults}
+                      />
+                    </>
+                  )}
+                </>
+              ) : null}
+
               {activeTab === 'requests' ? (
                 <>
                   <FriendRequestsSectionHeader count={visibleRequests.length} />
@@ -239,48 +287,7 @@ export function FriendsScreen() {
                     </>
                   )}
                 </>
-              ) : (
-                <>
-                  {hasSubmittedSearch ? (
-                    <>
-                      <FriendsSectionHeader
-                        count={userSearchResults.length}
-                        title="Search Results"
-                      />
-                      {userSearchLoading ? (
-                        <UserSearchLoadingState />
-                      ) : (
-                        <>
-                          {userSearchError ? (
-                            <RequestsErrorState
-                              message={userSearchError}
-                              onRetry={() => void submitUserSearch()}
-                            />
-                          ) : null}
-                          <FriendSearchResultsList results={userSearchResults} />
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <FriendsSectionHeader count={friends.length} />
-                      {friendsLoading ? (
-                        <FriendsLoadingState />
-                      ) : (
-                        <>
-                          {friendsError ? (
-                            <RequestsErrorState
-                              message={friendsError}
-                              onRetry={() => void loadFriends()}
-                            />
-                          ) : null}
-                          <FriendsList friends={friends} />
-                        </>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
+              ) : null}
             </View>
           </View>
         </ScrollView>
@@ -288,17 +295,6 @@ export function FriendsScreen() {
       <BottomNavigationBar activeItem="friends" />
     </View>
   );
-}
-
-function mapAcceptedFriend(relationship: AcceptedFriendship): Friend {
-  return {
-    avatarUrl: relationship.friend.avatarUrl,
-    displayName: relationship.friend.displayName,
-    email: relationship.friend.email,
-    id: relationship.friend.id,
-    lastSeenAt: relationship.friend.lastSeenAt,
-    username: relationship.friend.username,
-  };
 }
 
 function mapReceivedFriendRequest(friendship: Friendship): FriendRequest {
@@ -324,20 +320,19 @@ function RequestsLoadingState() {
   );
 }
 
-function FriendsLoadingState() {
-  return (
-    <View style={styles.statusCard}>
-      <ActivityIndicator color={colors.navActive} />
-      <Text style={styles.statusText}>Loading friends...</Text>
-    </View>
-  );
-}
-
 function UserSearchLoadingState() {
   return (
     <View style={styles.statusCard}>
       <ActivityIndicator color={colors.navActive} />
       <Text style={styles.statusText}>Searching users...</Text>
+    </View>
+  );
+}
+
+function UserSearchIdleState() {
+  return (
+    <View style={styles.statusCard}>
+      <Text style={styles.statusText}>Type at least 2 letters to find new friends.</Text>
     </View>
   );
 }

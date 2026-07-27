@@ -7,7 +7,6 @@ import { colors, fontWeights, opacity, spacing, typography } from '@/constants/d
 type FriendsSearchBarProps = {
   onChangeText: (value: string) => void;
   onClear: () => void;
-  onSubmitSearch: () => void;
   helperText?: string | null;
   value: string;
 };
@@ -16,7 +15,6 @@ export function FriendsSearchBar({
   onChangeText,
   onClear,
   helperText,
-  onSubmitSearch,
   value,
 }: FriendsSearchBarProps) {
   return (
@@ -28,7 +26,6 @@ export function FriendsSearchBar({
           autoCapitalize="none"
           autoCorrect={false}
           onChangeText={onChangeText}
-          onSubmitEditing={onSubmitSearch}
           placeholder="Search by name or username"
           placeholderTextColor={colors.muted}
           returnKeyType="search"

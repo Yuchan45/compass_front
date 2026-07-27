@@ -3,7 +3,7 @@ import type { AcceptedFriendsResponse, Friendship } from '@/types/friendships';
 
 export function getAcceptedFriendsRequest(accessToken: string) {
   return request<AcceptedFriendsResponse>(
-    '/friendships/friends?status=accepted&sortBy=displayName&sortDirection=asc',
+    '/friendships/friends?status=accepted&sortBy=displayName&sortDirection=asc&limit=100',
     {
       accessToken,
     },
@@ -13,6 +13,16 @@ export function getAcceptedFriendsRequest(accessToken: string) {
 export function getReceivedPendingFriendshipsRequest(accessToken: string) {
   return request<Friendship[]>('/friendships?type=received&status=PENDING', {
     accessToken,
+  });
+}
+
+export function createFriendshipRequest(accessToken: string, addresseeId: string) {
+  return request<Friendship>('/friendships/requests', {
+    accessToken,
+    body: {
+      addresseeId,
+    },
+    method: 'POST',
   });
 }
 

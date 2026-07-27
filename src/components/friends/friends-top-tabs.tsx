@@ -7,24 +7,22 @@ export type FriendsTab = 'search' | 'requests';
 
 type FriendsTopTabsProps = {
   activeTab: FriendsTab;
-  onRequestsPress: () => void;
-  onSearchPress: () => void;
+  onTabChange: (tab: FriendsTab) => void;
   requestCount: number;
 };
 
-export function FriendsTopTabs({
-  activeTab,
-  onRequestsPress,
-  onSearchPress,
-  requestCount,
-}: FriendsTopTabsProps) {
+export function FriendsTopTabs({ activeTab, onTabChange, requestCount }: FriendsTopTabsProps) {
   return (
     <View style={styles.tabs}>
-      <TabButton active={activeTab === 'search'} label="Search" onPress={onSearchPress} />
+      <TabButton
+        active={activeTab === 'search'}
+        label="Search"
+        onPress={() => onTabChange('search')}
+      />
       <TabButton
         active={activeTab === 'requests'}
         label="Requests"
-        onPress={onRequestsPress}
+        onPress={() => onTabChange('requests')}
         requestCount={requestCount}
       />
     </View>
@@ -64,6 +62,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     minHeight: 34,
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

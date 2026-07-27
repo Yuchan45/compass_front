@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AvatarImage } from '@/components/avatar-image';
 import { AppText as Text } from '@/components/app-text';
@@ -7,10 +7,16 @@ import { borders, colors, fontWeights, radii, spacing, typography } from '@/cons
 import type { SearchUserResult } from '@/types/users';
 
 type FriendSearchResultsListProps = {
+  addingUserIds?: Set<string>;
+  onAddFriend?: (userId: string) => void;
   results: SearchUserResult[];
 };
 
-export function FriendSearchResultsList({ results }: FriendSearchResultsListProps) {
+export function FriendSearchResultsList({
+  addingUserIds,
+  onAddFriend,
+  results,
+}: FriendSearchResultsListProps) {
   if (results.length === 0) {
     return <SearchNoResults />;
   }
@@ -18,18 +24,26 @@ export function FriendSearchResultsList({ results }: FriendSearchResultsListProp
   return (
     <View style={styles.list}>
       {results.map((result) => (
-        <SearchResultCard key={result.profile.id} result={result} />
+        <SearchResultCard
+          adding={addingUserIds?.has(result.profile.id) ?? false}
+          key={result.profile.id}
+          onAddFriend={onAddFriend}
+          result={result}
+        />
       ))}
     </View>
   );
 }
 
 type SearchResultCardProps = {
+  adding: boolean;
+  onAddFriend?: (userId: string) => void;
   result: SearchUserResult;
 };
 
-function SearchResultCard({ result }: SearchResultCardProps) {
+function SearchResultCard({ adding, onAddFriend, result }: SearchResultCardProps) {
   const relationshipLabel = getRelationshipLabel(result.relationship);
+  const canAddFriend = !result.relationship && onAddFriend;
 
   return (
     <View style={styles.card}>
@@ -47,7 +61,25 @@ function SearchResultCard({ result }: SearchResultCardProps) {
         </Text>
       </View>
 
-      {relationshipLabel ? (
+      {canAddFriend ? (
+        <Pressable
+          accessibilityLabel={`Add ${result.profile.displayName}`}
+          accessibilityRole="button"
+          disabled={adding}
+          onPress={() => onAddFriend(result.profile.id)}
+          style={({ pressed }) => [
+            styles.addButton,
+            adding && styles.disabled,
+            pressed && styles.pressed,
+          ]}
+        >
+          {adding ? (
+            <ActivityIndicator color={colors.surface} size="small" />
+          ) : (
+            <MaterialCommunityIcons color={colors.surface} name="account-plus" size={18} />
+          )}
+        </Pressable>
+      ) : relationshipLabel ? (
         <View style={styles.statusPill}>
           <Text numberOfLines={1} style={styles.statusText}>
             {relationshipLabel}
@@ -148,6 +180,20 @@ const styles = StyleSheet.create({
     color: colors.navActive,
     fontSize: typography.compact,
     fontWeight: fontWeights.extraBold,
+  },
+  addButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 19,
+    backgroundColor: colors.navActive,
+  },
+  disabled: {
+    opacity: 0.55,
+  },
+  pressed: {
+    opacity: 0.78,
   },
   emptyState: {
     minHeight: 220,

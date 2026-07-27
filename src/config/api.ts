@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 const defaultBaseUrl = Platform.select({
@@ -5,7 +6,15 @@ const defaultBaseUrl = Platform.select({
   default: 'http://localhost:9000/api',
 });
 
-export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.trim() || defaultBaseUrl).replace(
-  /\/$/,
-  '',
-);
+type ExpoExtra = {
+  backendApiUrl?: unknown;
+};
+
+const expoExtra = Constants.expoConfig?.extra as ExpoExtra | undefined;
+const backendApiUrl = getStringValue(expoExtra?.backendApiUrl) ?? process.env.BACKEND_API_URL;
+
+export const API_BASE_URL = (backendApiUrl?.trim() || defaultBaseUrl).replace(/\/$/, '');
+
+function getStringValue(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}

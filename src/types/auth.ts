@@ -20,6 +20,10 @@ export type LoginPayload = {
   password: string;
 };
 
+export type GoogleLoginPayload = {
+  idToken: string;
+};
+
 export type RegisterPayload = {
   displayName: string;
   email: string;
@@ -31,4 +35,5 @@ export type RegisterPayload = {
 export type UpdateProfilePayload = {
   avatarUrl?: string | null;
   displayName?: string;
+  username?: string;
 };

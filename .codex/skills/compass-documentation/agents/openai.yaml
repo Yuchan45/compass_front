@@ -1,0 +1,4 @@
+interface:
+  display_name: "Compass Documentation"
+  short_description: "Keep frontend docs synchronized"
+  default_prompt: "Use $compass-documentation to update Compass frontend documentation for the changes in this branch."

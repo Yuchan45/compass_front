@@ -1,26 +1,10 @@
 
-> compass-front@1.0.0 web
-> expo start --web --port 8081 --non-interactive
+> compass-front@1.0.0 start
+> node scripts/expo-start.js
 
 
 React Native / Expo is supported as a PRO feature of [33mConsole Ninja[39m [36mhttps://console-ninja.com/pro[39m.
 
 Starting project at D:\Programming\CompassApp\compass-front
-Using src/app as the root directory for Expo Router.
-React Compiler enabled
-Starting Metro Bundler
-
-Waiting on http://localhost:8081
-Logs for your project will appear below.
-Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web node_modules\expo-router\entry.js ▓▓▓▓░░░░░░░░░░░░ 25.0% ( 97/255)
-λ node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓▓░░░░░░░░░ 44.4% (44/71)
-Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 77.0% (596/679)
-λ node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 79.4% (681/776)
-λ Bundled 8074ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1 module)
-Web Bundled 8892ms node_modules\expo-router\entry.js (8 modules)
-λ Bundled 1823ms node_modules\expo\node_modules\@expo\cli\node_modules\@expo\router-server\node\render.js (1 module)
-Web Bundled 1955ms node_modules\expo-router\entry.js (1 module)
-Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.4% (795/815)
-Web Bundled 1867ms node_modules\expo-router\entry.js (839 modules)
- LOG  [web] Logs will appear in the browser console
+› Port 8081 is being used by another process
+› Skipping dev server

@@ -1,10 +1,17 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { loginRequest, getMeRequest, registerRequest, updateMeRequest } from '@/services/api/auth';
+import {
+  googleLoginRequest,
+  loginRequest,
+  getMeRequest,
+  registerRequest,
+  updateMeRequest,
+} from '@/services/api/auth';
 import { deleteToken, getToken, setToken } from '@/services/storage/token-storage';
 import type {
   AuthResponse,
+  GoogleLoginPayload,
   LoginPayload,
   PublicUser,
   RegisterPayload,
@@ -19,13 +26,14 @@ type AuthSession = {
 type AuthContextValue = {
   booting: boolean;
   error: string | null;
+  googleLogin: (payload: GoogleLoginPayload) => Promise<boolean>;
   loading: boolean;
-  login: (payload: LoginPayload) => Promise<void>;
+  login: (payload: LoginPayload) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<boolean>;
   session: AuthSession | null;
-  updateProfile: (payload: UpdateProfilePayload) => Promise<void>;
+  updateProfile: (payload: UpdateProfilePayload) => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -87,21 +95,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await action();
       await persistAuthResponse(response);
+      return true;
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : 'Unexpected authentication error.',
       );
+      return false;
     } finally {
       setLoading(false);
     }
   }
 
   async function login(payload: LoginPayload) {
-    await runAuthAction(() => loginRequest(payload));
+    return runAuthAction(() => loginRequest(payload));
+  }
+
+  async function googleLogin(payload: GoogleLoginPayload) {
+    return runAuthAction(() => googleLoginRequest(payload));
   }
 
   async function register(payload: RegisterPayload) {
-    await runAuthAction(() => registerRequest(payload));
+    return runAuthAction(() => registerRequest(payload));
   }
 
   async function logout() {
@@ -130,7 +144,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   async function updateProfile(payload: UpdateProfilePayload) {
     if (!session) {
-      return;
+      return false;
     }
 
     setLoading(true);
@@ -139,8 +153,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const user = await updateMeRequest(session.accessToken, payload);
       setSession({ ...session, user });
+      return true;
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Could not update profile.');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -151,6 +167,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       value={{
         booting,
         error,
+        googleLogin,
         loading,
         login,
         logout,

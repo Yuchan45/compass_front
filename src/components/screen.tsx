@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '@/constants/design';
+import { colors, dimensions, spacing } from '@/constants/design';
 
 type ScreenProps = {
   children: ReactNode;
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '100%',
-    maxWidth: 520,
+    maxWidth: dimensions.appMaxWidth,
     alignSelf: 'center',
   },
 });

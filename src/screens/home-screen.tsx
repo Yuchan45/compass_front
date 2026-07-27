@@ -1,10 +1,19 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { AppText as Text } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
-import { colors, radii, spacing, typography } from '@/constants/design';
+import {
+  borders,
+  colors,
+  dimensions,
+  fontWeights,
+  radii,
+  spacing,
+  typography,
+} from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
 
 export function HomeScreen() {
@@ -45,7 +54,7 @@ export function HomeScreen() {
       </View>
 
       <View style={styles.panel}>
-        <Text style={styles.sectionTitle}>Perfil</Text>
+        <Text style={styles.sectionTitle}>Profile</Text>
         <TextField label="Display name" onChangeText={setDisplayName} value={displayName} />
         <TextField
           autoCapitalize="none"
@@ -58,13 +67,13 @@ export function HomeScreen() {
         {error && <Text style={styles.error}>{error}</Text>}
 
         <Button loading={loading} onPress={submitProfile}>
-          Guardar perfil
+          Save profile
         </Button>
         <Button loading={loading} onPress={refreshMe} variant="secondary">
-          Refrescar
+          Refresh
         </Button>
         <Button onPress={logout} variant="quiet">
-          Cerrar sesion
+          Sign out
         </Button>
       </View>
     </Screen>
@@ -79,13 +88,13 @@ const styles = StyleSheet.create({
   eyebrow: {
     color: colors.secondary,
     fontSize: typography.small,
-    fontWeight: '800',
+    fontWeight: fontWeights.extraBold,
     textTransform: 'uppercase',
   },
   title: {
     color: colors.text,
     fontSize: typography.title,
-    fontWeight: '800',
+    fontWeight: fontWeights.extraBold,
   },
   subtitle: {
     color: colors.textSoft,
@@ -96,25 +105,25 @@ const styles = StyleSheet.create({
     marginBottom: spacing.four,
   },
   summaryItem: {
-    minHeight: 58,
+    minHeight: dimensions.summaryItemMinHeight,
     justifyContent: 'center',
     gap: spacing.one,
     borderRadius: radii.medium,
     borderColor: colors.border,
-    borderWidth: 1,
+    borderWidth: borders.defaultWidth,
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.three,
   },
   summaryLabel: {
     color: colors.muted,
     fontSize: typography.caption,
-    fontWeight: '800',
+    fontWeight: fontWeights.extraBold,
     textTransform: 'uppercase',
   },
   summaryValue: {
     color: colors.text,
     fontSize: typography.body,
-    fontWeight: '700',
+    fontWeight: fontWeights.bold,
   },
   roleBadge: {
     alignSelf: 'flex-start',
@@ -122,7 +131,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
     borderRadius: radii.small,
     fontSize: typography.caption,
-    fontWeight: '800',
+    fontWeight: fontWeights.extraBold,
     overflow: 'hidden',
     paddingHorizontal: spacing.two,
     paddingVertical: spacing.one,
@@ -131,18 +140,18 @@ const styles = StyleSheet.create({
     gap: spacing.three,
     borderRadius: radii.medium,
     borderColor: colors.border,
-    borderWidth: 1,
+    borderWidth: borders.defaultWidth,
     backgroundColor: colors.surface,
     padding: spacing.four,
   },
   sectionTitle: {
     color: colors.text,
     fontSize: typography.body,
-    fontWeight: '800',
+    fontWeight: fontWeights.extraBold,
   },
   error: {
     color: colors.danger,
     fontSize: typography.small,
-    fontWeight: '700',
+    fontWeight: fontWeights.bold,
   },
 });

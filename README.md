@@ -15,12 +15,13 @@ cp .env.example .env
 npm run start
 ```
 
-## API URL
+## Runtime Env
 
-The app reads `EXPO_PUBLIC_API_URL`.
+The app reads `PORT` for the frontend dev server and `BACKEND_API_URL` for API calls.
 
 ```bash
-EXPO_PUBLIC_API_URL=http://localhost:9000/api
+PORT=8081
+BACKEND_API_URL=http://localhost:9000/api
 ```
 
 Defaults:
@@ -28,11 +29,25 @@ Defaults:
 - Android emulator: `http://10.0.2.2:9000/api`
 - iOS simulator and web: `http://localhost:9000/api`
 
-For a physical device, set `EXPO_PUBLIC_API_URL` to your machine LAN IP, for example:
+For a physical device, set `BACKEND_API_URL` to your machine LAN IP, for example:
 
 ```bash
-EXPO_PUBLIC_API_URL=http://192.168.1.20:9000/api
+BACKEND_API_URL=http://192.168.1.20:9000/api
 ```
+
+## Google Auth
+
+The app reads `EXPO_PUBLIC_GOOGLE_CLIENT_ID` and sends Google's `id_token` to the backend:
+
+```bash
+EXPO_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+```
+
+Use the same client ID configured as `GOOGLE_CLIENT_ID` in the backend unless the backend is updated to accept multiple Google audiences.
+
+For web development, register `http://localhost:8081` exactly in Google Cloud Console under the OAuth
+client `Authorized redirect URIs`. The value must match the URL used by Expo, including the port and
+whether there is a trailing slash.
 
 ## Scripts
 
@@ -48,6 +63,18 @@ npm run lint:fix
 npm run typecheck
 npm run check
 ```
+
+## Development Workflow
+
+See [docs/codex-skills.md](docs/codex-skills.md) for the local Codex skills and recommended implementation, documentation, review, and commit workflow.
+
+## API Integration
+
+See [docs/api-integration.md](docs/api-integration.md) for frontend API services, auth token usage, friendship endpoints, and error handling.
+
+## UI System
+
+See [docs/ui-system.md](docs/ui-system.md) for shared UI component and validation conventions.
 
 ## Structure
 

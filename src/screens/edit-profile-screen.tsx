@@ -1,9 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import type { ImageSourcePropType } from 'react-native';
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,10 +11,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AvatarImage } from '@/components/avatar-image';
 import { AppText as Text } from '@/components/app-text';
 import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
-import { commonImages } from '@/constants/assets';
 import {
   borders,
   colors,
@@ -47,9 +45,6 @@ export function EditProfileScreen() {
   const nextUsername = username.trim();
   const displayNameValidation = getDisplayNameValidation(displayName);
   const usernameValidation = getUsernameValidation(username);
-  const avatarSource: ImageSourcePropType = nextAvatarUrl
-    ? { uri: nextAvatarUrl }
-    : commonImages.defaultProfile;
   const avatarPayload = nextAvatarUrl || null;
   const hasChanges =
     nextDisplayName !== user.displayName ||
@@ -113,7 +108,7 @@ export function EditProfileScreen() {
             </View>
 
             <View style={styles.preview}>
-              <Image accessibilityIgnoresInvertColors source={avatarSource} style={styles.avatar} />
+              <AvatarImage avatarUrl={nextAvatarUrl} style={styles.avatar} />
               <View style={styles.previewIdentity}>
                 <Text numberOfLines={1} style={styles.previewName}>
                   {nextDisplayName || user.displayName}

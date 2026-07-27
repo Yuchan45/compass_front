@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import type { ImageSourcePropType } from 'react-native';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { AvatarImage } from '@/components/avatar-image';
 import { AppText as Text } from '@/components/app-text';
-import { commonImages } from '@/constants/assets';
 import { borders, colors, fontWeights, radii, spacing, typography } from '@/constants/design';
 import type { SearchUserResult } from '@/types/users';
 
@@ -30,14 +29,11 @@ type SearchResultCardProps = {
 };
 
 function SearchResultCard({ result }: SearchResultCardProps) {
-  const avatarSource: ImageSourcePropType = result.profile.avatarUrl
-    ? { uri: result.profile.avatarUrl }
-    : commonImages.defaultProfile;
   const relationshipLabel = getRelationshipLabel(result.relationship);
 
   return (
     <View style={styles.card}>
-      <Image accessibilityIgnoresInvertColors source={avatarSource} style={styles.avatar} />
+      <AvatarImage avatarUrl={result.profile.avatarUrl} style={styles.avatar} />
 
       <View style={styles.identity}>
         <Text numberOfLines={1} style={styles.name}>

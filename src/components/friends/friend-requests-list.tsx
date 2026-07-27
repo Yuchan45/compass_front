@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
-import { Animated, Image, Pressable, StyleSheet, View } from 'react-native';
-import type { ImageSourcePropType } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
+import { AvatarImage } from '@/components/avatar-image';
 import { AppText as Text } from '@/components/app-text';
-import { commonImages } from '@/constants/assets';
 import {
   borders,
   colors,
@@ -65,9 +64,6 @@ type FriendRequestCardProps = {
 function FriendRequestCard({ onAccept, onReject, onResolved, request }: FriendRequestCardProps) {
   const [resolving, setResolving] = useState(false);
   const fadeValue = useRef(new Animated.Value(1)).current;
-  const avatarSource: ImageSourcePropType = request.avatarUrl
-    ? { uri: request.avatarUrl }
-    : commonImages.defaultProfile;
 
   async function resolveWithFade(onResolve: () => Promise<boolean>) {
     if (resolving) {
@@ -116,7 +112,7 @@ function FriendRequestCard({ onAccept, onReject, onResolved, request }: FriendRe
         },
       ]}
     >
-      <Image accessibilityIgnoresInvertColors source={avatarSource} style={styles.avatar} />
+      <AvatarImage avatarUrl={request.avatarUrl} style={styles.avatar} />
 
       <View style={styles.identity}>
         <Text numberOfLines={1} style={styles.name}>

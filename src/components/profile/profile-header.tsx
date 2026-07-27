@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import type { ImageSourcePropType } from 'react-native';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AvatarImage } from '@/components/avatar-image';
 import { AppText as Text } from '@/components/app-text';
-import { commonImages } from '@/constants/assets';
 import { colors, fontWeights, opacity, spacing, typography } from '@/constants/design';
 
 type ProfileHeaderProps = {
@@ -27,15 +26,11 @@ export function ProfileHeader({
   onEditPress,
   username,
 }: ProfileHeaderProps) {
-  const avatarSource: ImageSourcePropType = avatarUrl
-    ? { uri: avatarUrl }
-    : commonImages.defaultProfile;
-
   return (
     <View style={styles.header}>
       <View style={styles.hero}>
         <View style={styles.avatarFrame}>
-          <Image accessibilityIgnoresInvertColors source={avatarSource} style={styles.avatar} />
+          <AvatarImage avatarUrl={avatarUrl} style={styles.avatar} />
         </View>
 
         <View style={styles.actionStack}>
@@ -99,7 +94,7 @@ const styles = StyleSheet.create({
     width: 380,
     height: 380,
     overflow: 'hidden',
-    borderRadius: '50%',
+    borderRadius: 190,
     backgroundColor: '#c8def8',
   },
   avatar: {

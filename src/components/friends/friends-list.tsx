@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
-import type { ImageSourcePropType } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AvatarImage } from '@/components/avatar-image';
 import { AppText as Text } from '@/components/app-text';
-import { commonImages } from '@/constants/assets';
 import {
   borders,
   colors,
@@ -46,13 +45,9 @@ type FriendCardProps = {
 };
 
 function FriendCard({ friend }: FriendCardProps) {
-  const avatarSource: ImageSourcePropType = friend.avatarUrl
-    ? { uri: friend.avatarUrl }
-    : commonImages.defaultProfile;
-
   return (
     <View style={styles.card}>
-      <Image accessibilityIgnoresInvertColors source={avatarSource} style={styles.avatar} />
+      <AvatarImage avatarUrl={friend.avatarUrl} style={styles.avatar} />
 
       <View style={styles.identity}>
         <Text numberOfLines={1} style={styles.name}>

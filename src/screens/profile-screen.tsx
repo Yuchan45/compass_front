@@ -9,6 +9,7 @@ import {
   ProfileBadges,
   ProfileHeader,
   ProfileSection,
+  ProfileSettingsOverlay,
   ProfileStats,
   TopStreaks,
 } from '@/components/profile';
@@ -17,9 +18,10 @@ import { useAuth } from '@/contexts/auth-context';
 import { getAcceptedFriendsRequest } from '@/services/api/friendships';
 
 export function ProfileScreen() {
-  const { session } = useAuth();
+  const { logout, session } = useAuth();
   const router = useRouter();
   const [friendsCount, setFriendsCount] = useState(0);
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   const loadFriendsCount = useCallback(async () => {
     if (!session) {
@@ -44,6 +46,11 @@ export function ProfileScreen() {
 
   const { user } = session;
 
+  async function submitLogout() {
+    setSettingsVisible(false);
+    await logout();
+  }
+
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -54,6 +61,7 @@ export function ProfileScreen() {
               displayName={user.displayName}
               email={user.email}
               onEditPress={() => router.push('/edit-profile')}
+              onSettingsPress={() => setSettingsVisible(true)}
               username={user.username}
             />
 
@@ -78,6 +86,11 @@ export function ProfileScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+      <ProfileSettingsOverlay
+        onClose={() => setSettingsVisible(false)}
+        onLogout={() => void submitLogout()}
+        visible={settingsVisible}
+      />
       <BottomNavigationBar activeItem="profile" />
     </View>
   );

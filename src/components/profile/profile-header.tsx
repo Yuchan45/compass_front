@@ -11,6 +11,7 @@ type ProfileHeaderProps = {
   displayName: string;
   email: string;
   onEditPress?: () => void;
+  onSettingsPress?: () => void;
   username: string;
 };
 
@@ -26,6 +27,7 @@ export function ProfileHeader({
   displayName,
   email,
   onEditPress,
+  onSettingsPress,
   username,
 }: ProfileHeaderProps) {
   return (
@@ -37,7 +39,7 @@ export function ProfileHeader({
 
         {actionsVisible ? (
           <View style={styles.actionStack}>
-            <HeaderIconButton accessibilityLabel="Settings" icon="cog" />
+            <HeaderIconButton accessibilityLabel="Settings" icon="cog" onPress={onSettingsPress} />
             <HeaderIconButton
               accessibilityLabel="Edit profile"
               icon="pencil"

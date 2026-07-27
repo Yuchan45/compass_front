@@ -16,7 +16,7 @@ type NavigationItem = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   key: NavigationItemKey;
   label: string;
-  route?: '/' | '/friends' | '/profile';
+  route?: '/map' | '/friends' | '/profile';
 };
 
 const navigationItems: NavigationItem[] = [
@@ -24,7 +24,7 @@ const navigationItems: NavigationItem[] = [
     icon: 'map-outline',
     key: 'map',
     label: 'Map',
-    route: '/',
+    route: '/map',
   },
   {
     icon: 'calendar-month-outline',

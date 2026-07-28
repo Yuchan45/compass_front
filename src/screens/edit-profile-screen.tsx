@@ -1,8 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -26,20 +29,23 @@ import {
   typography,
 } from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
+import { getAvatarPresetsRequest } from '@/services/api/avatars';
+import type { AvatarPreset } from '@/types/avatars';
 
 export function EditProfileScreen() {
   const { error, loading, session, updateProfile } = useAuth();
   const router = useRouter();
   const [avatarUrl, setAvatarUrl] = useState(session?.user.avatarUrl ?? '');
+  const [avatarModalVisible, setAvatarModalVisible] = useState(false);
+  const [avatarPresets, setAvatarPresets] = useState<AvatarPreset[]>([]);
+  const [avatarPresetsError, setAvatarPresetsError] = useState<string | null>(null);
+  const [avatarPresetsLoading, setAvatarPresetsLoading] = useState(false);
+  const [avatarPresetsRetryKey, setAvatarPresetsRetryKey] = useState(0);
   const [displayName, setDisplayName] = useState(session?.user.displayName ?? '');
   const [localError, setLocalError] = useState<string | null>(null);
   const [username, setUsername] = useState(session?.user.username ?? '');
 
-  if (!session) {
-    return null;
-  }
-
-  const { user } = session;
+  const user = session?.user;
   const nextAvatarUrl = avatarUrl.trim();
   const nextDisplayName = displayName.trim();
   const nextUsername = username.trim();
@@ -47,11 +53,53 @@ export function EditProfileScreen() {
   const usernameValidation = getUsernameValidation(username);
   const avatarPayload = nextAvatarUrl || null;
   const hasChanges =
-    nextDisplayName !== user.displayName ||
-    nextUsername !== user.username ||
-    avatarPayload !== user.avatarUrl;
+    !!user &&
+    (nextDisplayName !== user.displayName ||
+      nextUsername !== user.username ||
+      avatarPayload !== user.avatarUrl);
   const hasInvalidProfileFields = !displayNameValidation.valid || !usernameValidation.valid;
   const visibleError = localError ?? error;
+
+  const loadAvatarPresets = useCallback(() => {
+    if (!avatarModalVisible || avatarPresets.length > 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    setAvatarPresetsLoading(true);
+    setAvatarPresetsError(null);
+
+    getAvatarPresetsRequest()
+      .then((response) => {
+        if (!cancelled) {
+          setAvatarPresets(response.data);
+        }
+      })
+      .catch((caughtError: unknown) => {
+        if (!cancelled) {
+          setAvatarPresets([]);
+          setAvatarPresetsError(
+            caughtError instanceof Error ? caughtError.message : 'Could not load avatars.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setAvatarPresetsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [avatarModalVisible, avatarPresets.length]);
+
+  useEffect(() => loadAvatarPresets(), [avatarPresetsRetryKey, loadAvatarPresets]);
+
+  if (!session || !user) {
+    return null;
+  }
 
   function returnToProfile() {
     router.replace('/profile');
@@ -108,7 +156,17 @@ export function EditProfileScreen() {
             </View>
 
             <View style={styles.preview}>
-              <AvatarImage avatarUrl={nextAvatarUrl} style={styles.avatar} />
+              <Pressable
+                accessibilityLabel="Change profile avatar"
+                accessibilityRole="button"
+                onPress={() => setAvatarModalVisible(true)}
+                style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
+              >
+                <AvatarImage avatarUrl={nextAvatarUrl} style={styles.avatar} />
+                <View style={styles.avatarEditBadge}>
+                  <MaterialCommunityIcons color={colors.surface} name="pencil" size={15} />
+                </View>
+              </Pressable>
               <View style={styles.previewIdentity}>
                 <Text numberOfLines={1} style={styles.previewName}>
                   {nextDisplayName || user.displayName}
@@ -139,13 +197,20 @@ export function EditProfileScreen() {
                 validationState={usernameValidation.state}
                 value={username}
               />
-              <TextField
-                autoCapitalize="none"
-                label="Avatar URL"
-                onChangeText={setAvatarUrl}
-                placeholder="https://example.com/avatar.png"
-                value={avatarUrl}
-              />
+              <Pressable
+                accessibilityLabel="Choose profile avatar"
+                accessibilityRole="button"
+                onPress={() => setAvatarModalVisible(true)}
+                style={({ pressed }) => [styles.avatarField, pressed && styles.pressed]}
+              >
+                <View>
+                  <Text style={styles.avatarFieldLabel}>Avatar</Text>
+                  <Text style={styles.avatarFieldValue}>
+                    {avatarUrl ? 'Preset selected' : 'Tap your profile image to choose an avatar'}
+                  </Text>
+                </View>
+                <MaterialCommunityIcons color={colors.muted} name="chevron-right" size={24} />
+              </Pressable>
 
               {visibleError && <Text style={styles.error}>{visibleError}</Text>}
 
@@ -165,7 +230,117 @@ export function EditProfileScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+      <AvatarPickerModal
+        currentAvatarUrl={avatarPayload}
+        error={avatarPresetsError}
+        loading={avatarPresetsLoading}
+        onClose={() => setAvatarModalVisible(false)}
+        onRetry={() => {
+          setAvatarPresets([]);
+          setAvatarPresetsError(null);
+          setAvatarPresetsRetryKey((currentKey) => currentKey + 1);
+        }}
+        onSelect={(preset) => {
+          setAvatarUrl(preset.url);
+          setAvatarModalVisible(false);
+        }}
+        presets={avatarPresets}
+        visible={avatarModalVisible}
+      />
     </KeyboardAvoidingView>
+  );
+}
+
+type AvatarPickerModalProps = {
+  currentAvatarUrl: string | null;
+  error: string | null;
+  loading: boolean;
+  onClose: () => void;
+  onRetry: () => void;
+  onSelect: (preset: AvatarPreset) => void;
+  presets: AvatarPreset[];
+  visible: boolean;
+};
+
+function AvatarPickerModal({
+  currentAvatarUrl,
+  error,
+  loading,
+  onClose,
+  onRetry,
+  onSelect,
+  presets,
+  visible,
+}: AvatarPickerModalProps) {
+  return (
+    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
+      <Pressable accessibilityLabel="Close avatar picker" onPress={onClose} style={styles.backdrop}>
+        <Pressable
+          accessibilityRole="none"
+          onPress={(event) => event.stopPropagation()}
+          style={styles.modal}
+        >
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalTitle}>Choose Avatar</Text>
+              <Text style={styles.modalSubtitle}>{presets.length} available presets</Text>
+            </View>
+            <Pressable
+              accessibilityLabel="Close avatar picker"
+              accessibilityRole="button"
+              onPress={onClose}
+              style={({ pressed }) => [styles.modalCloseButton, pressed && styles.pressed]}
+            >
+              <MaterialCommunityIcons color={colors.text} name="close" size={22} />
+            </Pressable>
+          </View>
+
+          {loading ? (
+            <View style={styles.modalState}>
+              <ActivityIndicator color={colors.navActive} />
+              <Text style={styles.modalStateText}>Loading avatars...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.modalState}>
+              <Text style={styles.modalErrorText}>{error}</Text>
+              <Button onPress={onRetry} variant="secondary">
+                Retry
+              </Button>
+            </View>
+          ) : (
+            <ScrollView
+              contentContainerStyle={styles.avatarGrid}
+              showsVerticalScrollIndicator={false}
+            >
+              {presets.map((preset) => {
+                const selected = preset.url === currentAvatarUrl;
+
+                return (
+                  <Pressable
+                    accessibilityLabel={`Select ${preset.style} avatar`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    key={preset.id}
+                    onPress={() => onSelect(preset)}
+                    style={({ pressed }) => [
+                      styles.avatarOption,
+                      selected && styles.avatarOptionSelected,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Image
+                      accessibilityIgnoresInvertColors
+                      source={{ uri: preset.url }}
+                      style={styles.avatarOptionImage}
+                    />
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -297,6 +472,23 @@ const styles = StyleSheet.create({
     borderRadius: 39,
     backgroundColor: colors.primarySoft,
   },
+  avatarButton: {
+    width: 78,
+    height: 78,
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    borderColor: colors.surface,
+    borderWidth: 2,
+    backgroundColor: colors.navActive,
+  },
   previewIdentity: {
     minWidth: 0,
     flex: 1,
@@ -319,6 +511,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     padding: spacing.four,
   },
+  avatarField: {
+    minHeight: dimensions.inputMinHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.two,
+    borderRadius: radii.medium,
+    borderColor: colors.border,
+    borderWidth: borders.defaultWidth,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.three,
+    paddingVertical: spacing.two,
+  },
+  avatarFieldLabel: {
+    color: colors.text,
+    fontSize: typography.small,
+    fontWeight: fontWeights.bold,
+  },
+  avatarFieldValue: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: fontWeights.medium,
+  },
   error: {
     color: colors.danger,
     fontSize: typography.small,
@@ -326,5 +541,88 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.two,
+  },
+  backdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.36)',
+  },
+  modal: {
+    maxHeight: '78%',
+    gap: spacing.three,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.three,
+    paddingTop: spacing.three,
+    paddingBottom: spacing.four,
+  },
+  modalHeader: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.two,
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: fontWeights.extraBold,
+  },
+  modalSubtitle: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: fontWeights.medium,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+  },
+  modalState: {
+    minHeight: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.two,
+  },
+  modalStateText: {
+    color: colors.muted,
+    fontSize: typography.small,
+    fontWeight: fontWeights.semiBold,
+  },
+  modalErrorText: {
+    color: colors.danger,
+    fontSize: typography.small,
+    fontWeight: fontWeights.bold,
+    textAlign: 'center',
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.two,
+    paddingBottom: spacing.two,
+  },
+  avatarOption: {
+    width: 68,
+    height: 68,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    borderColor: colors.border,
+    borderWidth: borders.defaultWidth,
+    backgroundColor: colors.surface,
+  },
+  avatarOptionSelected: {
+    borderColor: colors.navActive,
+    borderWidth: 2,
+  },
+  avatarOptionImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
   },
 });

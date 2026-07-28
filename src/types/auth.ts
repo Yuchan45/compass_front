@@ -25,6 +25,7 @@ export type GoogleLoginPayload = {
 };
 
 export type RegisterPayload = {
+  avatarPresetId: string;
   displayName: string;
   email: string;
   languageId?: string;

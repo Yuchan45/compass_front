@@ -20,9 +20,12 @@ import { AppText as Text, AppTextInput as TextInput } from '@/components/app-tex
 import { brandImages, externalImages } from '@/constants/assets';
 import { authTheme, borders } from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
+import { getAvatarPresetsRequest } from '@/services/api/avatars';
+import type { AvatarPreset } from '@/types/avatars';
 import { googleAuthPopupWindowName } from '@/utils/google-auth-popup';
 
 type AuthMode = 'entry' | 'login' | 'register';
+type RegisterStep = 'credentials' | 'avatar';
 type ButtonVariant = 'primary' | 'outline' | 'link';
 
 const googleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
@@ -45,7 +48,13 @@ export function AuthScreen() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
+  const [registerStep, setRegisterStep] = useState<RegisterStep>('credentials');
   const [registerUsername, setRegisterUsername] = useState('');
+  const [avatarPresets, setAvatarPresets] = useState<AvatarPreset[]>([]);
+  const [avatarPresetsError, setAvatarPresetsError] = useState<string | null>(null);
+  const [avatarPresetsLoading, setAvatarPresetsLoading] = useState(false);
+  const [avatarPresetsRetryKey, setAvatarPresetsRetryKey] = useState(0);
+  const [selectedAvatarPresetId, setSelectedAvatarPresetId] = useState<string | null>(null);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -65,10 +74,57 @@ export function AuthScreen() {
   const registerPasswordValidation = getRegisterPasswordValidation(registerPassword);
   const confirmPasswordValidation = getConfirmPasswordValidation(registerPassword, confirmPassword);
   const visibleError = localError ?? error;
+  const primaryActionDisabled =
+    booting ||
+    (isRegister &&
+      registerStep === 'avatar' &&
+      (avatarPresetsLoading || !selectedAvatarPresetId || avatarPresets.length === 0));
 
   useEffect(() => {
     googleLoginRef.current = googleLogin;
   }, [googleLogin]);
+
+  useEffect(() => {
+    if (mode !== 'register' || registerStep !== 'avatar' || avatarPresets.length > 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    setAvatarPresetsLoading(true);
+    setAvatarPresetsError(null);
+
+    getAvatarPresetsRequest()
+      .then((response) => {
+        if (cancelled) {
+          return;
+        }
+
+        setAvatarPresets(response.data);
+        setSelectedAvatarPresetId(
+          (currentPresetId) => currentPresetId ?? response.data[0]?.id ?? null,
+        );
+      })
+      .catch((caughtError: unknown) => {
+        if (cancelled) {
+          return;
+        }
+
+        setAvatarPresets([]);
+        setAvatarPresetsError(
+          caughtError instanceof Error ? caughtError.message : 'Could not load avatars.',
+        );
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setAvatarPresetsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [avatarPresets.length, avatarPresetsRetryKey, mode, registerStep]);
 
   useEffect(() => {
     if (!googleResponse) {
@@ -112,6 +168,7 @@ export function AuthScreen() {
 
   function changeMode(nextMode: AuthMode) {
     setLocalError(null);
+    setRegisterStep('credentials');
     setMode(nextMode);
   }
 
@@ -134,10 +191,7 @@ export function AuthScreen() {
     }
   }
 
-  async function submitRegister() {
-    const email = registerEmail.trim().toLowerCase();
-    const username = registerUsername.trim();
-
+  function continueToAvatarSelection() {
     if (
       !registerEmailValidation.valid ||
       !registerUsernameValidation.valid ||
@@ -153,7 +207,21 @@ export function AuthScreen() {
     }
 
     setLocalError(null);
+    setRegisterStep('avatar');
+  }
+
+  async function submitRegister() {
+    const email = registerEmail.trim().toLowerCase();
+    const username = registerUsername.trim();
+
+    if (!selectedAvatarPresetId) {
+      setLocalError('Choose a profile avatar.');
+      return;
+    }
+
+    setLocalError(null);
     const registered = await register({
+      avatarPresetId: selectedAvatarPresetId,
       displayName: getDisplayNameFromEmail(email),
       email,
       password: registerPassword,
@@ -213,15 +281,23 @@ export function AuthScreen() {
               <View style={styles.formShell}>
                 <View style={styles.heading}>
                   <Text style={styles.headingTitle}>
-                    {isRegister ? 'Create Account' : 'Welcome,'}
+                    {isRegister
+                      ? registerStep === 'avatar'
+                        ? 'Choose Avatar'
+                        : 'Create Account'
+                      : 'Welcome,'}
                   </Text>
                   <Text style={styles.headingSubtitle}>
-                    {isRegister ? 'to get started now!' : 'Glad to see you!'}
+                    {isRegister
+                      ? registerStep === 'avatar'
+                        ? 'Pick your Compass look'
+                        : 'to get started now!'
+                      : 'Glad to see you!'}
                   </Text>
                 </View>
 
                 <View style={styles.form}>
-                  {isRegister ? (
+                  {isRegister && registerStep === 'credentials' ? (
                     <>
                       <AuthField
                         accessibilityLabel="Email Address"
@@ -275,7 +351,28 @@ export function AuthScreen() {
                         value={confirmPassword}
                       />
                     </>
-                  ) : (
+                  ) : null}
+
+                  {isRegister && registerStep === 'avatar' ? (
+                    <AvatarPresetSelector
+                      error={avatarPresetsError}
+                      loading={avatarPresetsLoading}
+                      onBack={() => {
+                        setLocalError(null);
+                        setRegisterStep('credentials');
+                      }}
+                      onRetry={() => {
+                        setAvatarPresets([]);
+                        setAvatarPresetsError(null);
+                        setAvatarPresetsRetryKey((currentKey) => currentKey + 1);
+                      }}
+                      onSelect={setSelectedAvatarPresetId}
+                      presets={avatarPresets}
+                      selectedPresetId={selectedAvatarPresetId}
+                    />
+                  ) : null}
+
+                  {!isRegister ? (
                     <>
                       <AuthField
                         accessibilityLabel="Email Address"
@@ -307,17 +404,23 @@ export function AuthScreen() {
                         <Text style={styles.forgotText}>Forgot Password?</Text>
                       </Pressable>
                     </>
-                  )}
+                  ) : null}
 
                   {visibleError && <Text style={styles.error}>{visibleError}</Text>}
 
                   <AuthButton
-                    disabled={booting}
+                    disabled={primaryActionDisabled}
                     loading={loading || booting}
-                    onPress={isRegister ? submitRegister : submitLogin}
+                    onPress={
+                      isRegister
+                        ? registerStep === 'avatar'
+                          ? submitRegister
+                          : continueToAvatarSelection
+                        : submitLogin
+                    }
                     variant="primary"
                   >
-                    {isRegister ? 'Sign Up' : 'Login'}
+                    {isRegister ? (registerStep === 'avatar' ? 'Sign Up' : 'Continue') : 'Login'}
                   </AuthButton>
 
                   <AuthDivider label={isRegister ? 'Or Sign Up with' : 'Or Login with'} />
@@ -544,6 +647,84 @@ function GoogleButton({ disabled, loading, onPress }: GoogleButtonProps) {
         </>
       )}
     </Pressable>
+  );
+}
+
+type AvatarPresetSelectorProps = {
+  error: string | null;
+  loading: boolean;
+  onBack: () => void;
+  onRetry: () => void;
+  onSelect: (presetId: string) => void;
+  presets: AvatarPreset[];
+  selectedPresetId: string | null;
+};
+
+function AvatarPresetSelector({
+  error,
+  loading,
+  onBack,
+  onRetry,
+  onSelect,
+  presets,
+  selectedPresetId,
+}: AvatarPresetSelectorProps) {
+  if (loading) {
+    return (
+      <View style={styles.avatarState}>
+        <ActivityIndicator color={authColors.primaryText} />
+        <Text style={styles.avatarStateText}>Loading avatars...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.avatarState}>
+        <Text style={styles.avatarStateText}>{error}</Text>
+        <AuthButton onPress={onRetry} variant="outline">
+          Retry
+        </AuthButton>
+        <AuthButton onPress={onBack} variant="link">
+          Back
+        </AuthButton>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.avatarStep}>
+      <View style={styles.avatarGrid}>
+        {presets.map((preset) => {
+          const selected = preset.id === selectedPresetId;
+
+          return (
+            <Pressable
+              accessibilityLabel={`Select ${preset.style} avatar`}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              key={preset.id}
+              onPress={() => onSelect(preset.id)}
+              style={({ pressed }) => [
+                styles.avatarOption,
+                selected && styles.avatarOptionSelected,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Image
+                accessibilityIgnoresInvertColors
+                source={{ uri: preset.url }}
+                style={styles.avatarOptionImage}
+              />
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <AuthButton onPress={onBack} variant="link">
+        Back
+      </AuthButton>
+    </View>
   );
 }
 
@@ -902,6 +1083,47 @@ const styles = StyleSheet.create({
     color: authColors.textOnControl,
     fontSize: authTypography.control,
     fontWeight: authFontWeights.socialText,
+  },
+  avatarStep: {
+    gap: authSpacing.formGap,
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  avatarOption: {
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    borderColor: authColors.fieldBorder,
+    borderWidth: borders.defaultWidth,
+    backgroundColor: authColors.fieldBackground,
+  },
+  avatarOptionSelected: {
+    borderColor: authColors.primaryText,
+    borderWidth: 2,
+  },
+  avatarOptionImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+  },
+  avatarState: {
+    minHeight: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: authSpacing.formGap,
+  },
+  avatarStateText: {
+    color: authColors.primaryText,
+    fontSize: authTypography.error,
+    fontWeight: authFontWeights.error,
+    lineHeight: authLineHeights.error,
+    textAlign: 'center',
   },
   switchRow: {
     minHeight: authDimensions.switchMinHeight,

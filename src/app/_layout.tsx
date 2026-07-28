@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { fontAssets } from '@/constants/fonts';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -38,12 +39,19 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-        <StatusBar style="dark" />
-      </ToastProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ToastProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="map" options={{ animation: 'none' }} />
+            <Stack.Screen name="meetups" options={{ animation: 'none' }} />
+            <Stack.Screen name="friends" options={{ animation: 'none' }} />
+            <Stack.Screen name="profile" options={{ animation: 'none' }} />
+          </Stack>
+          <StatusBar style="dark" />
+        </ToastProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
 

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText as Text } from '@/components/app-text';
 import { BottomNavigationBar } from '@/components/bottom-navigation-bar';
+import { BottomTabSwipeContainer } from '@/components/bottom-tab-swipe-container';
 import {
   type FriendRequest,
   FriendRequestsList,
@@ -226,72 +227,74 @@ export function FriendsScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.container}>
-            <FriendsHeader
-              activeTab={activeTab}
-              onClearSearch={clearUserSearch}
-              onQueryChange={setQuery}
-              onTabChange={setActiveTab}
-              searchHelperText={helperText}
-              query={query}
-              requestCount={friendRequests.length}
-            />
+      <BottomTabSwipeContainer activeItem="friends">
+        <SafeAreaView edges={['top']} style={styles.safeArea}>
+          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <View style={styles.container}>
+              <FriendsHeader
+                activeTab={activeTab}
+                onClearSearch={clearUserSearch}
+                onQueryChange={setQuery}
+                onTabChange={setActiveTab}
+                searchHelperText={helperText}
+                query={query}
+                requestCount={friendRequests.length}
+              />
 
-            <View style={styles.section}>
-              {activeTab === 'search' ? (
-                <>
-                  <FriendsSectionHeader count={userSearchResults.length} title="Search Results" />
-                  {trimmedQuery.length < MIN_USER_SEARCH_LENGTH ? (
-                    <UserSearchIdleState />
-                  ) : userSearchLoading ? (
-                    <UserSearchLoadingState />
-                  ) : (
-                    <>
-                      {userSearchError ? (
-                        <RequestsErrorState
-                          message={userSearchError}
-                          onRetry={() => setSearchRetryKey((currentKey) => currentKey + 1)}
+              <View style={styles.section}>
+                {activeTab === 'search' ? (
+                  <>
+                    <FriendsSectionHeader count={userSearchResults.length} title="Search Results" />
+                    {trimmedQuery.length < MIN_USER_SEARCH_LENGTH ? (
+                      <UserSearchIdleState />
+                    ) : userSearchLoading ? (
+                      <UserSearchLoadingState />
+                    ) : (
+                      <>
+                        {userSearchError ? (
+                          <RequestsErrorState
+                            message={userSearchError}
+                            onRetry={() => setSearchRetryKey((currentKey) => currentKey + 1)}
+                          />
+                        ) : null}
+                        <FriendSearchResultsList
+                          addingUserIds={addingUserIds}
+                          onAddFriend={(userId) => void addFriend(userId)}
+                          results={userSearchResults}
                         />
-                      ) : null}
-                      <FriendSearchResultsList
-                        addingUserIds={addingUserIds}
-                        onAddFriend={(userId) => void addFriend(userId)}
-                        results={userSearchResults}
-                      />
-                    </>
-                  )}
-                </>
-              ) : null}
+                      </>
+                    )}
+                  </>
+                ) : null}
 
-              {activeTab === 'requests' ? (
-                <>
-                  <FriendRequestsSectionHeader count={visibleRequests.length} />
-                  {requestsLoading ? (
-                    <RequestsLoadingState />
-                  ) : (
-                    <>
-                      {requestsError ? (
-                        <RequestsErrorState
-                          message={requestsError}
-                          onRetry={() => void loadFriendRequests()}
+                {activeTab === 'requests' ? (
+                  <>
+                    <FriendRequestsSectionHeader count={visibleRequests.length} />
+                    {requestsLoading ? (
+                      <RequestsLoadingState />
+                    ) : (
+                      <>
+                        {requestsError ? (
+                          <RequestsErrorState
+                            message={requestsError}
+                            onRetry={() => void loadFriendRequests()}
+                          />
+                        ) : null}
+                        <FriendRequestsList
+                          onAccept={acceptReceivedRequest}
+                          onReject={declineReceivedRequest}
+                          onResolved={removeRequest}
+                          requests={visibleRequests}
                         />
-                      ) : null}
-                      <FriendRequestsList
-                        onAccept={acceptReceivedRequest}
-                        onReject={declineReceivedRequest}
-                        onResolved={removeRequest}
-                        requests={visibleRequests}
-                      />
-                    </>
-                  )}
-                </>
-              ) : null}
+                      </>
+                    )}
+                  </>
+                ) : null}
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      </BottomTabSwipeContainer>
       <BottomNavigationBar activeItem="friends" />
     </View>
   );

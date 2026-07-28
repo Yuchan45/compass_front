@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomNavigationBar } from '@/components/bottom-navigation-bar';
+import { BottomTabSwipeContainer } from '@/components/bottom-tab-swipe-container';
 import {
   LastMeetings,
   ProfileBadges,
@@ -53,39 +54,41 @@ export function ProfileScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.container}>
-            <ProfileHeader
-              avatarUrl={user.avatarUrl}
-              displayName={user.displayName}
-              email={user.email}
-              onEditPress={() => router.push('/edit-profile')}
-              onSettingsPress={() => setSettingsVisible(true)}
-              username={user.username}
-            />
-
-            <View style={styles.body}>
-              <ProfileStats
-                friends={friendsCount}
-                onFriendsPress={() => router.push('/profile-friends')}
+      <BottomTabSwipeContainer activeItem="profile">
+        <SafeAreaView edges={['top']} style={styles.safeArea}>
+          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <View style={styles.container}>
+              <ProfileHeader
+                avatarUrl={user.avatarUrl}
+                displayName={user.displayName}
+                email={user.email}
+                onEditPress={() => router.push('/edit-profile')}
+                onSettingsPress={() => setSettingsVisible(true)}
+                username={user.username}
               />
 
-              <ProfileSection title="Top Streaks">
-                <TopStreaks />
-              </ProfileSection>
+              <View style={styles.body}>
+                <ProfileStats
+                  friends={friendsCount}
+                  onFriendsPress={() => router.push('/profile-friends')}
+                />
 
-              <ProfileSection title="Badges">
-                <ProfileBadges />
-              </ProfileSection>
+                <ProfileSection title="Top Streaks">
+                  <TopStreaks />
+                </ProfileSection>
 
-              <ProfileSection title="Last Meetings">
-                <LastMeetings />
-              </ProfileSection>
+                <ProfileSection title="Badges">
+                  <ProfileBadges />
+                </ProfileSection>
+
+                <ProfileSection title="Last Meetings">
+                  <LastMeetings />
+                </ProfileSection>
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      </BottomTabSwipeContainer>
       <ProfileSettingsOverlay
         onClose={() => setSettingsVisible(false)}
         onLogout={() => void submitLogout()}

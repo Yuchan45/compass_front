@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { borders, navigationTheme } from '@/constants/design';
 
-type NavigationItemKey = 'map' | 'meetups' | 'friends' | 'profile';
+export type NavigationItemKey = 'map' | 'meetups' | 'friends' | 'profile';
+export type NavigationRoute = '/map' | '/meetups' | '/friends' | '/profile';
 
 type BottomNavigationBarProps = {
   activeItem: NavigationItemKey;
@@ -16,7 +17,7 @@ type NavigationItem = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   key: NavigationItemKey;
   label: string;
-  route?: '/map' | '/friends' | '/profile';
+  route?: NavigationRoute;
 };
 
 const navigationItems: NavigationItem[] = [
@@ -30,6 +31,7 @@ const navigationItems: NavigationItem[] = [
     icon: 'calendar-month-outline',
     key: 'meetups',
     label: 'Meets',
+    route: '/meetups',
   },
   {
     icon: 'account-group-outline',

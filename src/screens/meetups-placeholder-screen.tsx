@@ -15,23 +15,27 @@ import {
   typography,
 } from '@/constants/design';
 
-export function MapPlaceholderScreen() {
+export function MeetupsPlaceholderScreen() {
   return (
     <View style={styles.screen}>
-      <BottomTabSwipeContainer activeItem="map">
+      <BottomTabSwipeContainer activeItem="meetups">
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           <View style={styles.container}>
             <View style={styles.placeholder}>
               <View style={styles.iconShell}>
-                <MaterialCommunityIcons color={colors.navActive} name="map-outline" size={42} />
+                <MaterialCommunityIcons
+                  color={colors.navActive}
+                  name="calendar-month-outline"
+                  size={42}
+                />
               </View>
-              <Text style={styles.title}>Map</Text>
-              <Text style={styles.subtitle}>The live map will be added here.</Text>
+              <Text style={styles.title}>Meets</Text>
+              <Text style={styles.subtitle}>Meetup planning will be added here.</Text>
             </View>
           </View>
         </SafeAreaView>
       </BottomTabSwipeContainer>
-      <BottomNavigationBar activeItem="map" />
+      <BottomNavigationBar activeItem="meetups" />
     </View>
   );
 }

@@ -16,9 +16,11 @@ import {
 
 export type FriendRequest = {
   avatarUrl: string | null;
+  createdAt: string;
   email: string;
   id: string;
   displayName: string;
+  updatedAt: string;
   username: string;
 };
 

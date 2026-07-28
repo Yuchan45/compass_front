@@ -27,12 +27,37 @@ import { MIN_USER_SEARCH_LENGTH, searchUsersRequest } from '@/services/api/users
 import type { Friendship } from '@/types/friendships';
 import type { SearchUserResult } from '@/types/users';
 
+type RequestSortMode = 'recent' | 'oldest' | 'nameAsc' | 'nameDesc';
+
+const requestSortOptions: {
+  label: string;
+  value: RequestSortMode;
+}[] = [
+  {
+    label: 'Recent',
+    value: 'recent',
+  },
+  {
+    label: 'Oldest',
+    value: 'oldest',
+  },
+  {
+    label: 'A-Z',
+    value: 'nameAsc',
+  },
+  {
+    label: 'Z-A',
+    value: 'nameDesc',
+  },
+];
+
 export function FriendsScreen() {
   const { session } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<FriendsTab>('search');
   const [query, setQuery] = useState('');
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [requestSortMode, setRequestSortMode] = useState<RequestSortMode>('recent');
   const [requestsError, setRequestsError] = useState<string | null>(null);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [addingUserIds, setAddingUserIds] = useState<Set<string>>(() => new Set());
@@ -68,22 +93,36 @@ export function FriendsScreen() {
   const trimmedQuery = query.trim();
   const normalizedQuery = trimmedQuery.toLowerCase();
   const visibleRequests = useMemo(() => {
-    if (!normalizedQuery) {
-      return friendRequests;
-    }
+    const filteredRequests = !normalizedQuery
+      ? friendRequests
+      : friendRequests.filter((request) => {
+          const displayName = request.displayName.toLowerCase();
+          const email = request.email.toLowerCase();
+          const username = request.username.toLowerCase();
 
-    return friendRequests.filter((request) => {
-      const displayName = request.displayName.toLowerCase();
-      const email = request.email.toLowerCase();
-      const username = request.username.toLowerCase();
+          return (
+            displayName.includes(normalizedQuery) ||
+            email.includes(normalizedQuery) ||
+            username.includes(normalizedQuery)
+          );
+        });
 
-      return (
-        displayName.includes(normalizedQuery) ||
-        email.includes(normalizedQuery) ||
-        username.includes(normalizedQuery)
-      );
+    return [...filteredRequests].sort((left, right) =>
+      compareRequests(left, right, requestSortMode),
+    );
+  }, [friendRequests, normalizedQuery, requestSortMode]);
+  const requestSortLabel =
+    requestSortOptions.find((option) => option.value === requestSortMode)?.label ?? 'Recent';
+
+  function cycleRequestSortMode() {
+    setRequestSortMode((currentMode) => {
+      const currentIndex = requestSortOptions.findIndex((option) => option.value === currentMode);
+      const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % requestSortOptions.length : 0;
+
+      return requestSortOptions[nextIndex].value;
     });
-  }, [friendRequests, normalizedQuery]);
+  }
+
   const helperText =
     activeTab === 'search' &&
     trimmedQuery.length > 0 &&
@@ -269,7 +308,11 @@ export function FriendsScreen() {
 
                 {activeTab === 'requests' ? (
                   <>
-                    <FriendRequestsSectionHeader count={visibleRequests.length} />
+                    <FriendRequestsSectionHeader
+                      count={visibleRequests.length}
+                      onSortPress={cycleRequestSortMode}
+                      sortLabel={requestSortLabel}
+                    />
                     {requestsLoading ? (
                       <RequestsLoadingState />
                     ) : (
@@ -303,11 +346,41 @@ export function FriendsScreen() {
 function mapReceivedFriendRequest(friendship: Friendship): FriendRequest {
   return {
     avatarUrl: friendship.requester.avatarUrl,
+    createdAt: friendship.createdAt,
     displayName: friendship.requester.displayName,
     email: friendship.requester.email,
     id: friendship.id,
+    updatedAt: friendship.updatedAt,
     username: friendship.requester.username,
   };
+}
+
+function compareRequests(left: FriendRequest, right: FriendRequest, sortMode: RequestSortMode) {
+  if (sortMode === 'nameAsc' || sortMode === 'nameDesc') {
+    const direction = sortMode === 'nameAsc' ? 1 : -1;
+    const nameComparison = left.displayName.localeCompare(right.displayName, undefined, {
+      sensitivity: 'base',
+    });
+
+    if (nameComparison !== 0) {
+      return nameComparison * direction;
+    }
+
+    return (
+      left.username.localeCompare(right.username, undefined, { sensitivity: 'base' }) * direction
+    );
+  }
+
+  const direction = sortMode === 'recent' ? -1 : 1;
+  const leftTime = new Date(left.createdAt).getTime();
+  const rightTime = new Date(right.createdAt).getTime();
+  const dateComparison = leftTime - rightTime;
+
+  if (dateComparison !== 0) {
+    return dateComparison * direction;
+  }
+
+  return left.displayName.localeCompare(right.displayName, undefined, { sensitivity: 'base' });
 }
 
 function getErrorMessage(caughtError: unknown, fallback: string) {

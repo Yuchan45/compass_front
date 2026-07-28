@@ -1,14 +1,20 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText as Text } from '@/components/app-text';
 import { colors, fontWeights, radii, spacing, typography } from '@/constants/design';
 
 type FriendRequestsSectionHeaderProps = {
   count: number;
+  onSortPress: () => void;
+  sortLabel: string;
 };
 
-export function FriendRequestsSectionHeader({ count }: FriendRequestsSectionHeaderProps) {
+export function FriendRequestsSectionHeader({
+  count,
+  onSortPress,
+  sortLabel,
+}: FriendRequestsSectionHeaderProps) {
   return (
     <View style={styles.header}>
       <View style={styles.titleRow}>
@@ -20,10 +26,15 @@ export function FriendRequestsSectionHeader({ count }: FriendRequestsSectionHead
         ) : null}
       </View>
 
-      <View style={styles.sortPill}>
-        <Text style={styles.sortText}>Sort by: Recent</Text>
+      <Pressable
+        accessibilityLabel={`Sort friend requests by ${sortLabel}`}
+        accessibilityRole="button"
+        onPress={onSortPress}
+        style={({ pressed }) => [styles.sortPill, pressed && styles.pressed]}
+      >
+        <Text style={styles.sortText}>Sort by: {sortLabel}</Text>
         <MaterialCommunityIcons color={colors.muted} name="chevron-down" size={14} />
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -75,5 +86,8 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: typography.compact,
     fontWeight: fontWeights.semiBold,
+  },
+  pressed: {
+    opacity: 0.72,
   },
 });

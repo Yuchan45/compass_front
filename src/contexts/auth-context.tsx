@@ -8,6 +8,7 @@ import {
   registerRequest,
   updateMeRequest,
 } from '@/services/api/auth';
+import { ApiError, setUnauthorizedHandler } from '@/services/api/client';
 import { deleteToken, getToken, setToken } from '@/services/storage/token-storage';
 import type {
   AuthResponse,
@@ -80,6 +81,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
+  useEffect(() => {
+    setUnauthorizedHandler(async () => {
+      await deleteToken();
+      setSession(null);
+      setError('Your session expired. Please log in again.');
+    });
+
+    return () => {
+      setUnauthorizedHandler(null);
+    };
+  }, []);
+
   async function persistAuthResponse(response: AuthResponse) {
     await setToken(response.accessToken);
     setSession({
@@ -124,6 +137,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null);
   }
 
+  async function clearExpiredSession() {
+    await deleteToken();
+    setSession(null);
+    setError('Your session expired. Please log in again.');
+  }
+
   async function refreshMe() {
     if (!session) {
       return;
@@ -136,6 +155,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const user = await getMeRequest(session.accessToken);
       setSession({ ...session, user });
     } catch (caughtError) {
+      if (isUnauthorizedError(caughtError)) {
+        await clearExpiredSession();
+        return;
+      }
+
       setError(caughtError instanceof Error ? caughtError.message : 'Could not refresh profile.');
     } finally {
       setLoading(false);
@@ -155,6 +179,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setSession({ ...session, user });
       return true;
     } catch (caughtError) {
+      if (isUnauthorizedError(caughtError)) {
+        await clearExpiredSession();
+        return false;
+      }
+
       setError(caughtError instanceof Error ? caughtError.message : 'Could not update profile.');
       return false;
     } finally {
@@ -180,6 +209,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+function isUnauthorizedError(error: unknown) {
+  return error instanceof ApiError && error.status === 401;
 }
 
 export function useAuth() {

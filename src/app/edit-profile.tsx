@@ -1,9 +1,10 @@
-import { AuthScreen } from '@/screens/auth-screen';
+import { ProtectedRoute } from '@/components/protected-route';
 import { EditProfileScreen } from '@/screens/edit-profile-screen';
-import { useAuth } from '@/contexts/auth-context';
 
 export default function EditProfileRoute() {
-  const { session } = useAuth();
-
-  return session ? <EditProfileScreen /> : <AuthScreen />;
+  return (
+    <ProtectedRoute>
+      <EditProfileScreen />
+    </ProtectedRoute>
+  );
 }

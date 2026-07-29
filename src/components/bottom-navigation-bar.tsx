@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { borders, navigationTheme } from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
 import { useFriendRequests } from '@/contexts/friend-requests-context';
 
 export type NavigationItemKey = 'map' | 'meetups' | 'friends' | 'profile';
@@ -51,6 +52,7 @@ const navigationItems: NavigationItem[] = [
 export function BottomNavigationBar({ activeItem, onCreatePress }: BottomNavigationBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors } = useColorTheme();
   const { pendingRequestCount } = useFriendRequests();
 
   function pressItem(item: NavigationItem) {
@@ -62,8 +64,17 @@ export function BottomNavigationBar({ activeItem, onCreatePress }: BottomNavigat
   }
 
   return (
-    <View style={[styles.wrapper, { paddingBottom: insets.bottom }]}>
-      <View style={styles.bar}>
+    <View
+      style={[
+        styles.wrapper,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
+      <View style={[styles.bar, { backgroundColor: colors.surface }]}>
         <NavigationButton item={navigationItems[0]} activeItem={activeItem} onPress={pressItem} />
         <NavigationButton item={navigationItems[1]} activeItem={activeItem} onPress={pressItem} />
 
@@ -71,10 +82,14 @@ export function BottomNavigationBar({ activeItem, onCreatePress }: BottomNavigat
           accessibilityLabel="Create"
           accessibilityRole="button"
           onPress={onCreatePress}
-          style={({ pressed }) => [styles.createButton, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.createButton,
+            { backgroundColor: colors.navActive },
+            pressed && styles.pressed,
+          ]}
         >
           <MaterialCommunityIcons
-            color={navigationTheme.colors.centerButtonIcon}
+            color={colors.surface}
             name="plus"
             size={navigationTheme.dimensions.centerIconSize}
           />
@@ -106,7 +121,8 @@ function NavigationButton({
   onPress,
 }: NavigationButtonProps) {
   const active = item.key === activeItem;
-  const color = active ? navigationTheme.colors.active : navigationTheme.colors.inactive;
+  const { colors } = useColorTheme();
+  const color = active ? colors.navActive : colors.navInactive;
 
   return (
     <Pressable
@@ -127,16 +143,13 @@ function NavigationButton({
 
 const styles = StyleSheet.create({
   wrapper: {
-    borderColor: navigationTheme.colors.border,
     borderTopWidth: borders.defaultWidth,
-    backgroundColor: navigationTheme.colors.background,
   },
   bar: {
     height: navigationTheme.dimensions.height,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: navigationTheme.colors.background,
   },
   item: {
     minHeight: navigationTheme.dimensions.itemMinHeight,
@@ -159,7 +172,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: navigationTheme.radii.centerButton,
-    backgroundColor: navigationTheme.colors.centerButtonBackground,
   },
   pressed: {
     opacity: navigationTheme.opacity.pressed,

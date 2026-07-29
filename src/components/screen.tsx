@@ -2,15 +2,18 @@ import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, dimensions, spacing } from '@/constants/design';
+import { dimensions, spacing } from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
 
 type ScreenProps = {
   children: ReactNode;
 };
 
 export function Screen({ children }: ScreenProps) {
+  const { colors } = useColorTheme();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.content}
@@ -25,7 +28,6 @@ export function Screen({ children }: ScreenProps) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,

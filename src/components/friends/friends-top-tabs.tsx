@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText as Text } from '@/components/app-text';
-import { colors, fontWeights, opacity, radii, spacing, typography } from '@/constants/design';
+import { fontWeights, opacity, radii, spacing, typography } from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
 
 export type FriendsTab = 'search' | 'requests';
 
@@ -37,17 +38,27 @@ type TabButtonProps = {
 };
 
 function TabButton({ active, label, onPress, requestCount }: TabButtonProps) {
+  const { colors: themeColors } = useColorTheme();
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      style={({ pressed }) => [styles.tab, active && styles.activeTab, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.tab,
+        {
+          backgroundColor: active ? themeColors.navActive : themeColors.primarySoft,
+        },
+        pressed && styles.pressed,
+      ]}
     >
-      <Text style={[styles.tabText, active && styles.activeTabText]}>{label}</Text>
+      <Text style={[styles.tabText, { color: active ? themeColors.surface : themeColors.muted }]}>
+        {label}
+      </Text>
       {requestCount !== undefined && requestCount > 0 ? (
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{requestCount}</Text>
+          <Text style={[styles.badgeText, { color: themeColors.surface }]}>{requestCount}</Text>
         </View>
       ) : null}
     </Pressable>
@@ -68,19 +79,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.one,
     borderRadius: 17,
-    backgroundColor: '#eff0f5',
     paddingHorizontal: spacing.three,
   },
-  activeTab: {
-    backgroundColor: colors.navActive,
-  },
   tabText: {
-    color: colors.muted,
     fontSize: typography.caption,
     fontWeight: fontWeights.extraBold,
-  },
-  activeTabText: {
-    color: colors.surface,
   },
   badge: {
     minWidth: 18,
@@ -92,7 +95,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.compactGap,
   },
   badgeText: {
-    color: colors.surface,
     fontSize: typography.compact,
     fontWeight: fontWeights.extraBold,
   },

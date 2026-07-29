@@ -1,17 +1,19 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import type { ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText as Text } from '@/components/app-text';
 import {
   borders,
-  colors,
   fontWeights,
   opacity,
   radii,
   spacing,
   typography,
+  type AppColors,
 } from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
 
 type ProfileSettingsOverlayProps = {
   onClose: () => void;
@@ -25,6 +27,7 @@ type SettingOption = {
   key: string;
   label: string;
   onPress?: () => void;
+  rightContent?: ReactNode;
   tone?: 'default' | 'danger';
 };
 
@@ -34,12 +37,14 @@ export function ProfileSettingsOverlay({
   visible,
 }: ProfileSettingsOverlayProps) {
   const insets = useSafeAreaInsets();
+  const { colors, isDarkMode, toggleMode } = useColorTheme();
   const options: SettingOption[] = [
     {
-      disabled: true,
       icon: 'palette-outline',
       key: 'color-theme',
       label: 'Color Theme',
+      onPress: () => void toggleMode(),
+      rightContent: <ThemeSwitch colors={colors} enabled={isDarkMode} />,
     },
     {
       disabled: true,
@@ -80,12 +85,18 @@ export function ProfileSettingsOverlay({
         <Pressable
           accessibilityRole="menu"
           onPress={(event) => event.stopPropagation()}
-          style={[styles.panel, { paddingBottom: insets.bottom + spacing.three }]}
+          style={[
+            styles.panel,
+            {
+              backgroundColor: colors.surface,
+              paddingBottom: insets.bottom + spacing.three,
+            },
+          ]}
         >
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>Settings</Text>
-              <Text style={styles.subtitle}>Account preferences</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
+              <Text style={[styles.subtitle, { color: colors.muted }]}>Account preferences</Text>
             </View>
 
             <Pressable
@@ -100,7 +111,7 @@ export function ProfileSettingsOverlay({
 
           <View style={styles.options}>
             {options.map((option) => (
-              <SettingRow key={option.key} option={option} />
+              <SettingRow colors={colors} key={option.key} option={option} />
             ))}
           </View>
         </Pressable>
@@ -110,10 +121,11 @@ export function ProfileSettingsOverlay({
 }
 
 type SettingRowProps = {
+  colors: AppColors;
   option: SettingOption;
 };
 
-function SettingRow({ option }: SettingRowProps) {
+function SettingRow({ colors, option }: SettingRowProps) {
   const disabled = option.disabled || !option.onPress;
   const danger = option.tone === 'danger';
   const foregroundColor = danger ? colors.danger : colors.text;
@@ -126,20 +138,59 @@ function SettingRow({ option }: SettingRowProps) {
       onPress={option.onPress}
       style={({ pressed }) => [
         styles.option,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        },
         disabled && !danger && styles.disabledOption,
         pressed && styles.pressed,
       ]}
     >
-      <View style={[styles.optionIcon, danger && styles.dangerIcon]}>
+      <View
+        style={[
+          styles.optionIcon,
+          { backgroundColor: danger ? colors.alertSoft : colors.primarySoft },
+        ]}
+      >
         <MaterialCommunityIcons color={iconColor} name={option.icon} size={22} />
       </View>
       <Text style={[styles.optionLabel, { color: foregroundColor }]}>{option.label}</Text>
-      {disabled && !danger ? (
-        <Text style={styles.comingSoon}>Soon</Text>
+      {option.rightContent ? (
+        option.rightContent
+      ) : disabled && !danger ? (
+        <Text style={[styles.comingSoon, { color: colors.muted }]}>Soon</Text>
       ) : (
         <MaterialCommunityIcons color={colors.muted} name="chevron-right" size={20} />
       )}
     </Pressable>
+  );
+}
+
+type ThemeSwitchProps = {
+  colors: AppColors;
+  enabled: boolean;
+};
+
+function ThemeSwitch({ colors, enabled }: ThemeSwitchProps) {
+  return (
+    <View
+      style={[
+        styles.switchTrack,
+        {
+          backgroundColor: enabled ? colors.navActive : colors.border,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.switchKnob,
+          {
+            backgroundColor: colors.surface,
+            transform: [{ translateX: enabled ? 20 : 0 }],
+          },
+        ]}
+      />
+    </View>
   );
 }
 
@@ -153,7 +204,6 @@ const styles = StyleSheet.create({
     gap: spacing.three,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
-    backgroundColor: colors.surface,
     paddingHorizontal: spacing.three,
     paddingTop: spacing.three,
   },
@@ -165,12 +215,10 @@ const styles = StyleSheet.create({
     gap: spacing.three,
   },
   title: {
-    color: colors.text,
     fontSize: 24,
     fontWeight: fontWeights.extraBold,
   },
   subtitle: {
-    color: colors.muted,
     fontSize: typography.small,
     fontWeight: fontWeights.medium,
   },
@@ -189,9 +237,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.two,
     borderRadius: radii.medium,
-    borderColor: colors.border,
     borderWidth: borders.defaultWidth,
-    backgroundColor: colors.surface,
     paddingHorizontal: spacing.two,
   },
   disabledOption: {
@@ -203,10 +249,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 19,
-    backgroundColor: '#eee9ff',
-  },
-  dangerIcon: {
-    backgroundColor: colors.alertSoft,
   },
   optionLabel: {
     minWidth: 0,
@@ -215,10 +257,21 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
   },
   comingSoon: {
-    color: colors.muted,
     fontSize: typography.compact,
     fontWeight: fontWeights.extraBold,
     textTransform: 'uppercase',
+  },
+  switchTrack: {
+    width: 46,
+    height: 26,
+    justifyContent: 'center',
+    borderRadius: 13,
+    paddingHorizontal: 3,
+  },
+  switchKnob: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
   },
   pressed: {
     opacity: opacity.pressed,

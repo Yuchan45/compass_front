@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText as Text } from '@/components/app-text';
-import { colors, fontWeights, spacing, typography } from '@/constants/design';
+import { fontWeights, spacing, typography } from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
 
 type ProfileStatsProps = {
   friends?: number;
@@ -22,6 +23,7 @@ export function ProfileStats({
   onFriendsPress,
   places = 0,
 }: ProfileStatsProps) {
+  const { colors: themeColors } = useColorTheme();
   const values = {
     friends,
     meets,
@@ -43,8 +45,10 @@ export function ProfileStats({
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.statValue}>{values[item.key]}</Text>
-          <Text style={styles.statLabel}>{item.label}</Text>
+          <Text style={[styles.statValue, { color: themeColors.textSoft }]}>
+            {values[item.key]}
+          </Text>
+          <Text style={[styles.statLabel, { color: themeColors.muted }]}>{item.label}</Text>
         </Pressable>
       ))}
     </View>
@@ -72,13 +76,11 @@ const styles = StyleSheet.create({
     opacity: 0.78,
   },
   statValue: {
-    color: colors.textSoft,
     fontSize: 32,
     fontWeight: fontWeights.extraBold,
     lineHeight: 36,
   },
   statLabel: {
-    color: colors.muted,
     fontSize: typography.caption,
     textTransform: 'uppercase',
   },

@@ -1,15 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 
 import { AppText as Text, AppTextInput as TextInput } from '@/components/app-text';
-import {
-  borders,
-  colors,
-  dimensions,
-  fontWeights,
-  radii,
-  spacing,
-  typography,
-} from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
+import { borders, dimensions, fontWeights, radii, spacing, typography } from '@/constants/design';
 
 type TextFieldProps = {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
@@ -36,9 +29,11 @@ export function TextField({
   validationState = 'default',
   value,
 }: TextFieldProps) {
+  const { colors } = useColorTheme();
+
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
       <TextInput
         autoCapitalize={autoCapitalize}
         autoComplete={autoComplete}
@@ -49,12 +44,19 @@ export function TextField({
         secureTextEntry={secureTextEntry}
         style={[
           styles.input,
-          validationState === 'error' && styles.inputError,
-          validationState === 'success' && styles.inputSuccess,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            color: colors.text,
+          },
+          validationState === 'error' && { borderColor: colors.alert },
+          validationState === 'success' && { borderColor: colors.success },
         ]}
         value={value}
       />
-      {validationMessage ? <Text style={styles.validationMessage}>{validationMessage}</Text> : null}
+      {validationMessage ? (
+        <Text style={[styles.validationMessage, { color: colors.alert }]}>{validationMessage}</Text>
+      ) : null}
     </View>
   );
 }
@@ -64,28 +66,17 @@ const styles = StyleSheet.create({
     gap: spacing.one,
   },
   label: {
-    color: colors.text,
     fontSize: typography.small,
     fontWeight: fontWeights.bold,
   },
   input: {
     minHeight: dimensions.inputMinHeight,
     borderRadius: radii.medium,
-    borderColor: colors.border,
     borderWidth: borders.defaultWidth,
-    backgroundColor: colors.surface,
-    color: colors.text,
     fontSize: typography.body,
     paddingHorizontal: spacing.three,
   },
-  inputError: {
-    borderColor: colors.alert,
-  },
-  inputSuccess: {
-    borderColor: colors.success,
-  },
   validationMessage: {
-    color: colors.alert,
     fontSize: typography.caption,
     fontWeight: fontWeights.bold,
   },

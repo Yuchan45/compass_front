@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { fontAssets } from '@/constants/fonts';
 import { AuthProvider } from '@/contexts/auth-context';
+import { ColorThemeProvider, useColorTheme } from '@/contexts/color-theme-context';
 import { FriendRequestsProvider } from '@/contexts/friend-requests-context';
 import { ToastProvider } from '@/contexts/toast-context';
 import {
@@ -41,20 +42,30 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <FriendRequestsProvider>
-          <ToastProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="map" options={{ animation: 'none' }} />
-              <Stack.Screen name="meetups" options={{ animation: 'none' }} />
-              <Stack.Screen name="friends" options={{ animation: 'none' }} />
-              <Stack.Screen name="profile" options={{ animation: 'none' }} />
-            </Stack>
-            <StatusBar style="dark" />
-          </ToastProvider>
-        </FriendRequestsProvider>
-      </AuthProvider>
+      <ColorThemeProvider>
+        <AppProviders />
+      </ColorThemeProvider>
     </GestureHandlerRootView>
+  );
+}
+
+function AppProviders() {
+  const { isDarkMode } = useColorTheme();
+
+  return (
+    <AuthProvider>
+      <FriendRequestsProvider>
+        <ToastProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="map" options={{ animation: 'none' }} />
+            <Stack.Screen name="meetups" options={{ animation: 'none' }} />
+            <Stack.Screen name="friends" options={{ animation: 'none' }} />
+            <Stack.Screen name="profile" options={{ animation: 'none' }} />
+          </Stack>
+          <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+        </ToastProvider>
+      </FriendRequestsProvider>
+    </AuthProvider>
   );
 }
 

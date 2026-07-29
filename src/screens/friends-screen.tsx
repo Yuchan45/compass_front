@@ -14,8 +14,9 @@ import {
   FriendsSectionHeader,
   type FriendsTab,
 } from '@/components/friends';
-import { colors, dimensions, fontWeights, opacity, spacing, typography } from '@/constants/design';
+import { dimensions, fontWeights, opacity, spacing, typography } from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
+import { useColorTheme } from '@/contexts/color-theme-context';
 import { useFriendRequests } from '@/contexts/friend-requests-context';
 import { useToast } from '@/contexts/toast-context';
 import {
@@ -54,6 +55,7 @@ const requestSortOptions: {
 
 export function FriendsScreen() {
   const { session } = useAuth();
+  const { colors: themeColors } = useColorTheme();
   const { setPendingRequestCount } = useFriendRequests();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<FriendsTab>('search');
@@ -274,7 +276,7 @@ export function FriendsScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: themeColors.background }]}>
       <BottomTabSwipeContainer activeItem="friends">
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -397,27 +399,35 @@ function getErrorMessage(caughtError: unknown, fallback: string) {
 }
 
 function RequestsLoadingState() {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.statusCard}>
+    <View style={[styles.statusCard, { backgroundColor: colors.surface }]}>
       <ActivityIndicator color={colors.navActive} />
-      <Text style={styles.statusText}>Loading friend requests...</Text>
+      <Text style={[styles.statusText, { color: colors.muted }]}>Loading friend requests...</Text>
     </View>
   );
 }
 
 function UserSearchLoadingState() {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.statusCard}>
+    <View style={[styles.statusCard, { backgroundColor: colors.surface }]}>
       <ActivityIndicator color={colors.navActive} />
-      <Text style={styles.statusText}>Searching users...</Text>
+      <Text style={[styles.statusText, { color: colors.muted }]}>Searching users...</Text>
     </View>
   );
 }
 
 function UserSearchIdleState() {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.statusCard}>
-      <Text style={styles.statusText}>Type at least 2 letters to find new friends.</Text>
+    <View style={[styles.statusCard, { backgroundColor: colors.surface }]}>
+      <Text style={[styles.statusText, { color: colors.muted }]}>
+        Type at least 2 letters to find new friends.
+      </Text>
     </View>
   );
 }
@@ -428,16 +438,22 @@ type RequestsErrorStateProps = {
 };
 
 function RequestsErrorState({ message, onRetry }: RequestsErrorStateProps) {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.errorCard}>
-      <Text style={styles.errorText}>{message}</Text>
+    <View style={[styles.errorCard, { backgroundColor: colors.surface }]}>
+      <Text style={[styles.errorText, { color: colors.danger }]}>{message}</Text>
       <Pressable
         accessibilityLabel="Retry loading friend requests"
         accessibilityRole="button"
         onPress={onRetry}
-        style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.retryButton,
+          { backgroundColor: colors.navActive },
+          pressed && styles.pressed,
+        ]}
       >
-        <Text style={styles.retryText}>Retry</Text>
+        <Text style={[styles.retryText, { color: colors.surface }]}>Retry</Text>
       </Pressable>
     </View>
   );
@@ -446,7 +462,6 @@ function RequestsErrorState({ message, onRetry }: RequestsErrorStateProps) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
@@ -472,34 +487,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.two,
     borderRadius: 8,
-    backgroundColor: colors.surface,
     padding: spacing.four,
   },
   statusText: {
-    color: colors.muted,
     fontSize: typography.small,
     fontWeight: fontWeights.semiBold,
   },
   errorCard: {
     gap: spacing.two,
     borderRadius: 8,
-    backgroundColor: colors.surface,
     padding: spacing.three,
   },
   errorText: {
-    color: colors.danger,
     fontSize: typography.small,
     fontWeight: fontWeights.bold,
   },
   retryButton: {
     alignSelf: 'flex-start',
     borderRadius: 16,
-    backgroundColor: colors.navActive,
     paddingHorizontal: spacing.three,
     paddingVertical: spacing.one,
   },
   retryText: {
-    color: colors.surface,
     fontSize: typography.caption,
     fontWeight: fontWeights.extraBold,
   },

@@ -13,8 +13,9 @@ import {
   ProfileStats,
   TopStreaks,
 } from '@/components/profile';
-import { colors, dimensions, fontWeights, opacity, spacing, typography } from '@/constants/design';
+import { dimensions, fontWeights, opacity, spacing, typography } from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
+import { useColorTheme } from '@/contexts/color-theme-context';
 import { useToast } from '@/contexts/toast-context';
 import { getAcceptedFriendsRequest } from '@/services/api/friendships';
 import type { AcceptedFriendship } from '@/types/friendships';
@@ -25,6 +26,7 @@ type FriendProfileScreenProps = {
 
 export function FriendProfileScreen({ friendId }: FriendProfileScreenProps) {
   const { session } = useAuth();
+  const { colors: themeColors } = useColorTheme();
   const { showToast } = useToast();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export function FriendProfileScreen({ friendId }: FriendProfileScreenProps) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: themeColors.background }]}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.container}>
@@ -129,10 +131,12 @@ type StatusStateProps = {
 };
 
 function StatusState({ message }: StatusStateProps) {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.statusCard}>
+    <View style={[styles.statusCard, { backgroundColor: colors.surface }]}>
       <ActivityIndicator color={colors.navActive} />
-      <Text style={styles.statusText}>{message}</Text>
+      <Text style={[styles.statusText, { color: colors.muted }]}>{message}</Text>
     </View>
   );
 }
@@ -143,16 +147,22 @@ type ErrorStateProps = {
 };
 
 function ErrorState({ message, onRetry }: ErrorStateProps) {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.errorCard}>
-      <Text style={styles.errorText}>{message}</Text>
+    <View style={[styles.errorCard, { backgroundColor: colors.surface }]}>
+      <Text style={[styles.errorText, { color: colors.danger }]}>{message}</Text>
       <Pressable
         accessibilityLabel="Retry loading friend profile"
         accessibilityRole="button"
         onPress={onRetry}
-        style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.retryButton,
+          { backgroundColor: colors.navActive },
+          pressed && styles.pressed,
+        ]}
       >
-        <Text style={styles.retryText}>Retry</Text>
+        <Text style={[styles.retryText, { color: colors.surface }]}>Retry</Text>
       </Pressable>
     </View>
   );
@@ -161,7 +171,6 @@ function ErrorState({ message, onRetry }: ErrorStateProps) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
@@ -186,12 +195,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.two,
     borderRadius: 8,
-    backgroundColor: colors.surface,
     marginHorizontal: spacing.two,
     padding: spacing.four,
   },
   statusText: {
-    color: colors.muted,
     fontSize: typography.small,
     fontWeight: fontWeights.semiBold,
     textAlign: 'center',
@@ -199,24 +206,20 @@ const styles = StyleSheet.create({
   errorCard: {
     gap: spacing.two,
     borderRadius: 8,
-    backgroundColor: colors.surface,
     marginHorizontal: spacing.two,
     padding: spacing.three,
   },
   errorText: {
-    color: colors.danger,
     fontSize: typography.small,
     fontWeight: fontWeights.bold,
   },
   retryButton: {
     alignSelf: 'flex-start',
     borderRadius: 16,
-    backgroundColor: colors.navActive,
     paddingHorizontal: spacing.three,
     paddingVertical: spacing.one,
   },
   retryText: {
-    color: colors.surface,
     fontSize: typography.caption,
     fontWeight: fontWeights.extraBold,
   },

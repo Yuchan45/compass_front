@@ -33,6 +33,24 @@ export const colors = {
   whiteAlpha90: 'rgba(255, 255, 255, 0.9)',
 };
 
+export const darkColors: typeof colors = {
+  ...colors,
+  background: '#0f1014',
+  alertSoft: '#3a1d25',
+  border: '#30313a',
+  infoSoft: '#172554',
+  muted: '#a6a8b3',
+  navActive: '#8b6cff',
+  navInactive: '#8f929c',
+  primary: '#7c5cff',
+  primarySoft: '#252238',
+  surface: '#1a1b21',
+  text: '#f4f4f5',
+  textSoft: '#c7c9d1',
+};
+
+export type AppColors = typeof colors;
+
 export const gradients = {
   authBackground: ['#c392f7', '#83a6ff'] as const,
 };

@@ -29,11 +29,13 @@ import {
   typography,
 } from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
+import { useColorTheme } from '@/contexts/color-theme-context';
 import { getAvatarPresetsRequest } from '@/services/api/avatars';
 import type { AvatarPreset } from '@/types/avatars';
 
 export function EditProfileScreen() {
   const { error, loading, session, updateProfile } = useAuth();
+  const { colors: themeColors } = useColorTheme();
   const router = useRouter();
   const [avatarUrl, setAvatarUrl] = useState(session?.user.avatarUrl ?? '');
   const [avatarModalVisible, setAvatarModalVisible] = useState(false);
@@ -127,9 +129,9 @@ export function EditProfileScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.keyboardView}
+      style={[styles.keyboardView, { backgroundColor: themeColors.background }]}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: themeColors.background }]}>
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
@@ -142,42 +144,73 @@ export function EditProfileScreen() {
                 accessibilityLabel="Back to profile"
                 accessibilityRole="button"
                 onPress={returnToProfile}
-                style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.iconButton,
+                  { backgroundColor: themeColors.surface },
+                  pressed && styles.pressed,
+                ]}
               >
-                <MaterialCommunityIcons color={colors.text} name="arrow-left" size={26} />
+                <MaterialCommunityIcons color={themeColors.text} name="arrow-left" size={26} />
               </Pressable>
 
               <View style={styles.headerText}>
-                <Text style={styles.title}>Edit Profile</Text>
-                <Text numberOfLines={1} style={styles.subtitle}>
+                <Text style={[styles.title, { color: themeColors.text }]}>Edit Profile</Text>
+                <Text numberOfLines={1} style={[styles.subtitle, { color: themeColors.muted }]}>
                   @{nextUsername || user.username}
                 </Text>
               </View>
             </View>
 
-            <View style={styles.preview}>
+            <View
+              style={[
+                styles.preview,
+                {
+                  backgroundColor: themeColors.surface,
+                  borderColor: themeColors.border,
+                },
+              ]}
+            >
               <Pressable
                 accessibilityLabel="Change profile avatar"
                 accessibilityRole="button"
                 onPress={() => setAvatarModalVisible(true)}
                 style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
               >
-                <AvatarImage avatarUrl={nextAvatarUrl} style={styles.avatar} />
-                <View style={styles.avatarEditBadge}>
-                  <MaterialCommunityIcons color={colors.surface} name="pencil" size={15} />
+                <AvatarImage
+                  avatarUrl={nextAvatarUrl}
+                  style={[styles.avatar, { backgroundColor: themeColors.primarySoft }]}
+                />
+                <View
+                  style={[
+                    styles.avatarEditBadge,
+                    {
+                      backgroundColor: themeColors.navActive,
+                      borderColor: themeColors.surface,
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons color={themeColors.surface} name="pencil" size={15} />
                 </View>
               </Pressable>
               <View style={styles.previewIdentity}>
-                <Text numberOfLines={1} style={styles.previewName}>
+                <Text numberOfLines={1} style={[styles.previewName, { color: themeColors.text }]}>
                   {nextDisplayName || user.displayName}
                 </Text>
-                <Text numberOfLines={1} style={styles.previewEmail}>
+                <Text numberOfLines={1} style={[styles.previewEmail, { color: themeColors.muted }]}>
                   @{nextUsername || user.username}
                 </Text>
               </View>
             </View>
 
-            <View style={styles.form}>
+            <View
+              style={[
+                styles.form,
+                {
+                  backgroundColor: themeColors.surface,
+                  borderColor: themeColors.border,
+                },
+              ]}
+            >
               <TextField
                 autoCapitalize="words"
                 label="Display name"
@@ -201,18 +234,27 @@ export function EditProfileScreen() {
                 accessibilityLabel="Choose profile avatar"
                 accessibilityRole="button"
                 onPress={() => setAvatarModalVisible(true)}
-                style={({ pressed }) => [styles.avatarField, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.avatarField,
+                  {
+                    backgroundColor: themeColors.surface,
+                    borderColor: themeColors.border,
+                  },
+                  pressed && styles.pressed,
+                ]}
               >
                 <View>
-                  <Text style={styles.avatarFieldLabel}>Avatar</Text>
-                  <Text style={styles.avatarFieldValue}>
+                  <Text style={[styles.avatarFieldLabel, { color: themeColors.text }]}>Avatar</Text>
+                  <Text style={[styles.avatarFieldValue, { color: themeColors.muted }]}>
                     {avatarUrl ? 'Preset selected' : 'Tap your profile image to choose an avatar'}
                   </Text>
                 </View>
-                <MaterialCommunityIcons color={colors.muted} name="chevron-right" size={24} />
+                <MaterialCommunityIcons color={themeColors.muted} name="chevron-right" size={24} />
               </Pressable>
 
-              {visibleError && <Text style={styles.error}>{visibleError}</Text>}
+              {visibleError && (
+                <Text style={[styles.error, { color: themeColors.danger }]}>{visibleError}</Text>
+              )}
 
               <View style={styles.actions}>
                 <Button
@@ -272,37 +314,47 @@ function AvatarPickerModal({
   presets,
   visible,
 }: AvatarPickerModalProps) {
+  const { colors: themeColors } = useColorTheme();
+
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
       <Pressable accessibilityLabel="Close avatar picker" onPress={onClose} style={styles.backdrop}>
         <Pressable
           accessibilityRole="none"
           onPress={(event) => event.stopPropagation()}
-          style={styles.modal}
+          style={[styles.modal, { backgroundColor: themeColors.background }]}
         >
           <View style={styles.modalHeader}>
             <View>
-              <Text style={styles.modalTitle}>Choose Avatar</Text>
-              <Text style={styles.modalSubtitle}>{presets.length} available presets</Text>
+              <Text style={[styles.modalTitle, { color: themeColors.text }]}>Choose Avatar</Text>
+              <Text style={[styles.modalSubtitle, { color: themeColors.muted }]}>
+                {presets.length} available presets
+              </Text>
             </View>
             <Pressable
               accessibilityLabel="Close avatar picker"
               accessibilityRole="button"
               onPress={onClose}
-              style={({ pressed }) => [styles.modalCloseButton, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.modalCloseButton,
+                { backgroundColor: themeColors.surface },
+                pressed && styles.pressed,
+              ]}
             >
-              <MaterialCommunityIcons color={colors.text} name="close" size={22} />
+              <MaterialCommunityIcons color={themeColors.text} name="close" size={22} />
             </Pressable>
           </View>
 
           {loading ? (
             <View style={styles.modalState}>
-              <ActivityIndicator color={colors.navActive} />
-              <Text style={styles.modalStateText}>Loading avatars...</Text>
+              <ActivityIndicator color={themeColors.navActive} />
+              <Text style={[styles.modalStateText, { color: themeColors.muted }]}>
+                Loading avatars...
+              </Text>
             </View>
           ) : error ? (
             <View style={styles.modalState}>
-              <Text style={styles.modalErrorText}>{error}</Text>
+              <Text style={[styles.modalErrorText, { color: themeColors.danger }]}>{error}</Text>
               <Button onPress={onRetry} variant="secondary">
                 Retry
               </Button>
@@ -324,7 +376,11 @@ function AvatarPickerModal({
                     onPress={() => onSelect(preset)}
                     style={({ pressed }) => [
                       styles.avatarOption,
-                      selected && styles.avatarOptionSelected,
+                      {
+                        backgroundColor: themeColors.surface,
+                        borderColor: selected ? themeColors.navActive : themeColors.border,
+                        borderWidth: selected ? 2 : borders.defaultWidth,
+                      },
                       pressed && styles.pressed,
                     ]}
                   >

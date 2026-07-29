@@ -5,32 +5,37 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText as Text } from '@/components/app-text';
 import { BottomNavigationBar } from '@/components/bottom-navigation-bar';
 import { BottomTabSwipeContainer } from '@/components/bottom-tab-swipe-container';
-import {
-  borders,
-  colors,
-  dimensions,
-  fontWeights,
-  radii,
-  spacing,
-  typography,
-} from '@/constants/design';
+import { borders, dimensions, fontWeights, radii, spacing, typography } from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
 
 export function MeetupsPlaceholderScreen() {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <BottomTabSwipeContainer activeItem="meetups">
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           <View style={styles.container}>
-            <View style={styles.placeholder}>
-              <View style={styles.iconShell}>
+            <View
+              style={[
+                styles.placeholder,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <View style={[styles.iconShell, { backgroundColor: colors.primarySoft }]}>
                 <MaterialCommunityIcons
                   color={colors.navActive}
                   name="calendar-month-outline"
                   size={42}
                 />
               </View>
-              <Text style={styles.title}>Meets</Text>
-              <Text style={styles.subtitle}>Meetup planning will be added here.</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Meets</Text>
+              <Text style={[styles.subtitle, { color: colors.muted }]}>
+                Meetup planning will be added here.
+              </Text>
             </View>
           </View>
         </SafeAreaView>
@@ -43,7 +48,6 @@ export function MeetupsPlaceholderScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
@@ -62,9 +66,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.two,
     borderRadius: radii.medium,
-    borderColor: colors.border,
     borderWidth: borders.defaultWidth,
-    backgroundColor: colors.surface,
     padding: spacing.four,
   },
   iconShell: {
@@ -73,15 +75,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 39,
-    backgroundColor: colors.primarySoft,
   },
   title: {
-    color: colors.text,
     fontSize: typography.title,
     fontWeight: fontWeights.extraBold,
   },
   subtitle: {
-    color: colors.muted,
     fontSize: typography.body,
     fontWeight: fontWeights.medium,
     textAlign: 'center',

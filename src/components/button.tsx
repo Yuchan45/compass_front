@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 
 import { AppText as Text } from '@/components/app-text';
+import { useColorTheme } from '@/contexts/color-theme-context';
 import {
   borders,
-  colors,
   dimensions,
   fontWeights,
   opacity,
@@ -30,6 +30,8 @@ export function Button({
   onPress,
   variant = 'primary',
 }: ButtonProps) {
+  const { colors } = useColorTheme();
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -37,7 +39,13 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        styles[variant],
+        variant === 'primary' && { backgroundColor: colors.primary },
+        variant === 'secondary' && {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderWidth: borders.defaultWidth,
+        },
+        variant === 'quiet' && { backgroundColor: colors.transparent },
         pressed && !disabled && styles.pressed,
         (disabled || loading) && styles.disabled,
       ]}
@@ -45,7 +53,11 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? colors.surface : colors.text} />
       ) : (
-        <Text style={[styles.label, variant === 'primary' && styles.primaryLabel]}>{children}</Text>
+        <Text
+          style={[styles.label, { color: variant === 'primary' ? colors.surface : colors.text }]}
+        >
+          {children}
+        </Text>
       )}
     </Pressable>
   );
@@ -59,24 +71,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.medium,
     paddingHorizontal: spacing.four,
   },
-  primary: {
-    backgroundColor: colors.primary,
-  },
-  secondary: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: borders.defaultWidth,
-  },
-  quiet: {
-    backgroundColor: colors.transparent,
-  },
   label: {
-    color: colors.text,
     fontSize: typography.body,
     fontWeight: fontWeights.bold,
-  },
-  primaryLabel: {
-    color: colors.surface,
   },
   pressed: {
     opacity: opacity.pressed,

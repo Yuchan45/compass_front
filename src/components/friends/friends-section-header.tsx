@@ -1,7 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 
 import { AppText as Text } from '@/components/app-text';
-import { colors, fontWeights, spacing, typography } from '@/constants/design';
+import { fontWeights, spacing, typography } from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
 
 type FriendsSectionHeaderProps = {
   count: number;
@@ -9,9 +10,11 @@ type FriendsSectionHeaderProps = {
 };
 
 export function FriendsSectionHeader({ count, title = 'Friends' }: FriendsSectionHeaderProps) {
+  const { colors } = useColorTheme();
+
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>
+      <Text style={[styles.title, { color: colors.text }]}>
         {title} ({count})
       </Text>
     </View>
@@ -27,7 +30,6 @@ const styles = StyleSheet.create({
     gap: spacing.two,
   },
   title: {
-    color: colors.text,
     fontSize: typography.small,
     fontWeight: fontWeights.extraBold,
   },

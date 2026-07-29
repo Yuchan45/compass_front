@@ -4,15 +4,8 @@ import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { AvatarImage } from '@/components/avatar-image';
 import { AppText as Text } from '@/components/app-text';
-import {
-  borders,
-  colors,
-  fontWeights,
-  opacity,
-  radii,
-  spacing,
-  typography,
-} from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
+import { borders, fontWeights, opacity, radii, spacing, typography } from '@/constants/design';
 
 export type FriendRequest = {
   avatarUrl: string | null;
@@ -64,6 +57,7 @@ type FriendRequestCardProps = {
 };
 
 function FriendRequestCard({ onAccept, onReject, onResolved, request }: FriendRequestCardProps) {
+  const { colors } = useColorTheme();
   const [resolving, setResolving] = useState(false);
   const fadeValue = useRef(new Animated.Value(1)).current;
 
@@ -96,7 +90,10 @@ function FriendRequestCard({ onAccept, onReject, onResolved, request }: FriendRe
       style={[
         styles.card,
         {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
           opacity: fadeValue,
+          shadowColor: colors.black,
           transform: [
             {
               scale: fadeValue.interpolate({
@@ -114,16 +111,19 @@ function FriendRequestCard({ onAccept, onReject, onResolved, request }: FriendRe
         },
       ]}
     >
-      <AvatarImage avatarUrl={request.avatarUrl} style={styles.avatar} />
+      <AvatarImage
+        avatarUrl={request.avatarUrl}
+        style={[styles.avatar, { backgroundColor: colors.primarySoft }]}
+      />
 
       <View style={styles.identity}>
-        <Text numberOfLines={1} style={styles.name}>
+        <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
           {request.displayName}
         </Text>
-        <Text numberOfLines={1} style={styles.username}>
+        <Text numberOfLines={1} style={[styles.username, { color: colors.muted }]}>
           @{request.username}
         </Text>
-        <Text numberOfLines={1} style={styles.email}>
+        <Text numberOfLines={1} style={[styles.email, { color: colors.muted }]}>
           {request.email}
         </Text>
       </View>
@@ -167,6 +167,7 @@ function ActionButton({
   onPress,
   variant,
 }: ActionButtonProps) {
+  const { colors } = useColorTheme();
   const primary = variant === 'primary';
 
   return (
@@ -182,26 +183,37 @@ function ActionButton({
         disabled && styles.disabled,
       ]}
     >
-      <View style={[styles.actionIcon, primary ? styles.primaryAction : styles.secondaryAction]}>
+      <View
+        style={[
+          styles.actionIcon,
+          { backgroundColor: primary ? colors.navActive : colors.primarySoft },
+        ]}
+      >
         <MaterialCommunityIcons
           color={primary ? colors.surface : colors.muted}
           name={icon}
           size={20}
         />
       </View>
-      <Text style={[styles.actionLabel, primary && styles.primaryLabel]}>{label}</Text>
+      <Text style={[styles.actionLabel, { color: primary ? colors.navActive : colors.muted }]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
 function RequestsEmptyState() {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.emptyState}>
-      <View style={styles.emptyIcon}>
+    <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
+      <View style={[styles.emptyIcon, { backgroundColor: colors.primarySoft }]}>
         <MaterialCommunityIcons color={colors.navActive} name="account-check-outline" size={34} />
       </View>
-      <Text style={styles.emptyTitle}>No friend requests</Text>
-      <Text style={styles.emptySubtitle}>Pending requests will appear here.</Text>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>No friend requests</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+        Pending requests will appear here.
+      </Text>
     </View>
   );
 }
@@ -216,11 +228,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.two,
     borderRadius: radii.medium,
-    borderColor: '#e6e8ef',
     borderWidth: borders.defaultWidth,
-    backgroundColor: colors.surface,
     padding: spacing.two,
-    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
     shadowRadius: 16,
@@ -230,7 +239,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#e9edf2',
   },
   identity: {
     minWidth: 0,
@@ -238,17 +246,14 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   name: {
-    color: colors.text,
     fontSize: typography.small,
     fontWeight: fontWeights.extraBold,
   },
   username: {
-    color: colors.muted,
     fontSize: typography.caption,
     fontWeight: fontWeights.medium,
   },
   email: {
-    color: colors.muted,
     fontSize: typography.compact,
     fontWeight: fontWeights.semiBold,
     paddingTop: spacing.compactGap,
@@ -270,19 +275,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 17,
   },
-  primaryAction: {
-    backgroundColor: colors.navActive,
-  },
-  secondaryAction: {
-    backgroundColor: '#f1f2f7',
-  },
   actionLabel: {
-    color: colors.muted,
     fontSize: typography.compact,
     fontWeight: fontWeights.extraBold,
-  },
-  primaryLabel: {
-    color: colors.navActive,
   },
   pressed: {
     opacity: opacity.pressed,
@@ -296,7 +291,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.one,
     borderRadius: radii.medium,
-    backgroundColor: colors.surface,
     padding: spacing.five,
   },
   emptyIcon: {
@@ -305,17 +299,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 36,
-    backgroundColor: '#eee9ff',
     marginBottom: spacing.two,
   },
   emptyTitle: {
-    color: colors.text,
     fontSize: typography.body,
     fontWeight: fontWeights.extraBold,
     textAlign: 'center',
   },
   emptySubtitle: {
-    color: colors.muted,
     fontSize: typography.small,
     fontWeight: fontWeights.medium,
     textAlign: 'center',

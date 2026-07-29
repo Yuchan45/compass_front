@@ -3,15 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AvatarImage } from '@/components/avatar-image';
 import { AppText as Text } from '@/components/app-text';
-import {
-  borders,
-  colors,
-  fontWeights,
-  opacity,
-  radii,
-  spacing,
-  typography,
-} from '@/constants/design';
+import { useColorTheme } from '@/contexts/color-theme-context';
+import { borders, fontWeights, opacity, radii, spacing, typography } from '@/constants/design';
 
 export type Friend = {
   avatarUrl: string | null;
@@ -47,18 +40,32 @@ type FriendCardProps = {
 };
 
 function FriendCard({ friend, onProfilePress }: FriendCardProps) {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.card}>
-      <AvatarImage avatarUrl={friend.avatarUrl} style={styles.avatar} />
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowColor: colors.black,
+        },
+      ]}
+    >
+      <AvatarImage
+        avatarUrl={friend.avatarUrl}
+        style={[styles.avatar, { backgroundColor: colors.primarySoft }]}
+      />
 
       <View style={styles.identity}>
-        <Text numberOfLines={1} style={styles.name}>
+        <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
           {friend.displayName}
         </Text>
-        <Text numberOfLines={1} style={styles.username}>
+        <Text numberOfLines={1} style={[styles.username, { color: colors.muted }]}>
           @{friend.username}
         </Text>
-        <Text numberOfLines={1} style={styles.meta}>
+        <Text numberOfLines={1} style={[styles.meta, { color: colors.textSoft }]}>
           {friend.email}
         </Text>
       </View>
@@ -67,7 +74,11 @@ function FriendCard({ friend, onProfilePress }: FriendCardProps) {
         accessibilityLabel={`Open ${friend.displayName} profile`}
         accessibilityRole="button"
         onPress={() => onProfilePress?.(friend)}
-        style={({ pressed }) => [styles.profileButton, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.profileButton,
+          { backgroundColor: colors.primarySoft },
+          pressed && styles.pressed,
+        ]}
       >
         <MaterialCommunityIcons color={colors.navActive} name="account" size={22} />
       </Pressable>
@@ -76,13 +87,17 @@ function FriendCard({ friend, onProfilePress }: FriendCardProps) {
 }
 
 function FriendsNoResults() {
+  const { colors } = useColorTheme();
+
   return (
-    <View style={styles.emptyState}>
-      <View style={styles.emptyIcon}>
+    <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
+      <View style={[styles.emptyIcon, { backgroundColor: colors.primarySoft }]}>
         <MaterialCommunityIcons color={colors.navActive} name="account-search-outline" size={34} />
       </View>
-      <Text style={styles.emptyTitle}>No friends found</Text>
-      <Text style={styles.emptySubtitle}>Try another name or username.</Text>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>No friends found</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+        Try another name or username.
+      </Text>
     </View>
   );
 }
@@ -97,11 +112,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.two,
     borderRadius: radii.medium,
-    borderColor: '#e6e8ef',
     borderWidth: borders.defaultWidth,
-    backgroundColor: colors.surface,
     padding: spacing.two,
-    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.05,
     shadowRadius: 14,
@@ -111,7 +123,6 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: '#e9edf2',
   },
   identity: {
     minWidth: 0,
@@ -119,17 +130,14 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   name: {
-    color: colors.text,
     fontSize: typography.small,
     fontWeight: fontWeights.extraBold,
   },
   username: {
-    color: colors.muted,
     fontSize: typography.caption,
     fontWeight: fontWeights.medium,
   },
   meta: {
-    color: colors.textSoft,
     fontSize: typography.compact,
     fontWeight: fontWeights.semiBold,
     paddingTop: spacing.compactGap,
@@ -140,7 +148,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 19,
-    backgroundColor: '#eee9ff',
   },
   pressed: {
     opacity: opacity.pressed,
@@ -151,7 +158,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.one,
     borderRadius: radii.medium,
-    backgroundColor: colors.surface,
     padding: spacing.five,
   },
   emptyIcon: {
@@ -160,17 +166,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 36,
-    backgroundColor: '#eee9ff',
     marginBottom: spacing.two,
   },
   emptyTitle: {
-    color: colors.text,
     fontSize: typography.body,
     fontWeight: fontWeights.extraBold,
     textAlign: 'center',
   },
   emptySubtitle: {
-    color: colors.muted,
     fontSize: typography.small,
     fontWeight: fontWeights.medium,
     textAlign: 'center',

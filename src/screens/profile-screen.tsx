@@ -14,12 +14,14 @@ import {
   ProfileStats,
   TopStreaks,
 } from '@/components/profile';
-import { colors, dimensions, spacing } from '@/constants/design';
+import { dimensions, spacing } from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
+import { useColorTheme } from '@/contexts/color-theme-context';
 import { getAcceptedFriendsRequest } from '@/services/api/friendships';
 
 export function ProfileScreen() {
   const { logout, session } = useAuth();
+  const { colors: themeColors } = useColorTheme();
   const router = useRouter();
   const [friendsCount, setFriendsCount] = useState(0);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -53,7 +55,7 @@ export function ProfileScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: themeColors.background }]}>
       <BottomTabSwipeContainer activeItem="profile">
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -102,7 +104,6 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,

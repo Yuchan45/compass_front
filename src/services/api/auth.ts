@@ -6,6 +6,7 @@ import type {
   PublicUser,
   RegisterPayload,
   UpdateProfilePayload,
+  UpdateUserSettingsPayload,
 } from '@/types/auth';
 
 export function loginRequest(payload: LoginPayload) {
@@ -37,6 +38,14 @@ export function getMeRequest(accessToken: string) {
 
 export function updateMeRequest(accessToken: string, payload: UpdateProfilePayload) {
   return request<PublicUser>('/users/me', {
+    accessToken,
+    body: payload,
+    method: 'PATCH',
+  });
+}
+
+export function updateMeSettingsRequest(accessToken: string, payload: UpdateUserSettingsPayload) {
+  return request<PublicUser>('/users/me/settings', {
     accessToken,
     body: payload,
     method: 'PATCH',

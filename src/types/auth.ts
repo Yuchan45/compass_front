@@ -4,11 +4,16 @@ export type PublicUser = {
   username: string;
   displayName: string;
   avatarUrl: string | null;
+  settings: {
+    colorTheme: ColorThemeMode;
+  };
   roleCode: string;
   lastSeenAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
+
+export type ColorThemeMode = 'light' | 'dark';
 
 export type AuthResponse = {
   accessToken: string;
@@ -37,4 +42,8 @@ export type UpdateProfilePayload = {
   avatarUrl?: string | null;
   displayName?: string;
   username?: string;
+};
+
+export type UpdateUserSettingsPayload = {
+  colorTheme?: ColorThemeMode;
 };

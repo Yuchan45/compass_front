@@ -1,9 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
 import { colors, darkColors, type AppColors } from '@/constants/design';
+import { useAuth } from '@/contexts/auth-context';
 
 export type ColorThemeMode = 'light' | 'dark';
 
@@ -15,7 +14,6 @@ type ColorThemeContextValue = {
   toggleMode: () => Promise<void>;
 };
 
-const THEME_KEY = 'compass.colorTheme';
 const ColorThemeContext = createContext<ColorThemeContextValue | null>(null);
 
 type ColorThemeProviderProps = {
@@ -23,30 +21,33 @@ type ColorThemeProviderProps = {
 };
 
 export function ColorThemeProvider({ children }: ColorThemeProviderProps) {
+  const { session, updateUserSettings } = useAuth();
   const [mode, setModeState] = useState<ColorThemeMode>('light');
 
   useEffect(() => {
-    let active = true;
+    setModeState(session?.user.settings?.colorTheme ?? 'light');
+  }, [session?.user.settings?.colorTheme]);
 
-    async function restoreTheme() {
-      const storedMode = await getStoredThemeMode();
+  const setMode = useCallback(
+    async (nextMode: ColorThemeMode) => {
+      const previousMode = mode;
 
-      if (active && storedMode) {
-        setModeState(storedMode);
+      setModeState(nextMode);
+
+      if (!session) {
+        return;
       }
-    }
 
-    void restoreTheme();
+      const updated = await updateUserSettings({
+        colorTheme: nextMode,
+      });
 
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const setMode = useCallback(async (nextMode: ColorThemeMode) => {
-    setModeState(nextMode);
-    await setStoredThemeMode(nextMode);
-  }, []);
+      if (!updated) {
+        setModeState(previousMode);
+      }
+    },
+    [mode, session, updateUserSettings],
+  );
 
   const toggleMode = useCallback(async () => {
     await setMode(mode === 'dark' ? 'light' : 'dark');
@@ -74,30 +75,4 @@ export function useColorTheme() {
   }
 
   return context;
-}
-
-async function getStoredThemeMode() {
-  const value =
-    Platform.OS === 'web'
-      ? getWebStorage()?.getItem(THEME_KEY)
-      : await SecureStore.getItemAsync(THEME_KEY);
-
-  return value === 'dark' || value === 'light' ? value : null;
-}
-
-async function setStoredThemeMode(mode: ColorThemeMode) {
-  if (Platform.OS === 'web') {
-    getWebStorage()?.setItem(THEME_KEY, mode);
-    return;
-  }
-
-  await SecureStore.setItemAsync(THEME_KEY, mode);
-}
-
-function getWebStorage() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  return window.localStorage;
 }

@@ -42,9 +42,11 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ColorThemeProvider>
-        <AppProviders />
-      </ColorThemeProvider>
+      <AuthProvider>
+        <ColorThemeProvider>
+          <AppProviders />
+        </ColorThemeProvider>
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 }
@@ -53,19 +55,17 @@ function AppProviders() {
   const { isDarkMode } = useColorTheme();
 
   return (
-    <AuthProvider>
-      <FriendRequestsProvider>
-        <ToastProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="map" options={{ animation: 'none' }} />
-            <Stack.Screen name="meetups" options={{ animation: 'none' }} />
-            <Stack.Screen name="friends" options={{ animation: 'none' }} />
-            <Stack.Screen name="profile" options={{ animation: 'none' }} />
-          </Stack>
-          <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-        </ToastProvider>
-      </FriendRequestsProvider>
-    </AuthProvider>
+    <FriendRequestsProvider>
+      <ToastProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="map" options={{ animation: 'none' }} />
+          <Stack.Screen name="meetups" options={{ animation: 'none' }} />
+          <Stack.Screen name="friends" options={{ animation: 'none' }} />
+          <Stack.Screen name="profile" options={{ animation: 'none' }} />
+        </Stack>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      </ToastProvider>
+    </FriendRequestsProvider>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   getMeRequest,
   registerRequest,
   updateMeRequest,
+  updateMeSettingsRequest,
 } from '@/services/api/auth';
 import { ApiError, setUnauthorizedHandler } from '@/services/api/client';
 import { deleteToken, getToken, setToken } from '@/services/storage/token-storage';
@@ -17,6 +18,7 @@ import type {
   PublicUser,
   RegisterPayload,
   UpdateProfilePayload,
+  UpdateUserSettingsPayload,
 } from '@/types/auth';
 
 type AuthSession = {
@@ -35,6 +37,7 @@ type AuthContextValue = {
   register: (payload: RegisterPayload) => Promise<boolean>;
   session: AuthSession | null;
   updateProfile: (payload: UpdateProfilePayload) => Promise<boolean>;
+  updateUserSettings: (payload: UpdateUserSettingsPayload) => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -191,6 +194,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  async function updateUserSettings(payload: UpdateUserSettingsPayload) {
+    if (!session) {
+      return false;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const user = await updateMeSettingsRequest(session.accessToken, payload);
+      setSession({ ...session, user });
+      return true;
+    } catch (caughtError) {
+      if (isUnauthorizedError(caughtError)) {
+        await clearExpiredSession();
+        return false;
+      }
+
+      setError(caughtError instanceof Error ? caughtError.message : 'Could not update settings.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -204,6 +232,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         register,
         session,
         updateProfile,
+        updateUserSettings,
       }}
     >
       {children}

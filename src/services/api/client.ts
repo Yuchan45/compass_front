@@ -10,6 +10,22 @@ type ApiErrorBody = {
   message?: string | string[];
 };
 
+let unauthorizedHandler: (() => void | Promise<void>) | null = null;
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export function setUnauthorizedHandler(handler: (() => void | Promise<void>) | null) {
+  unauthorizedHandler = handler;
+}
+
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     body: options.body ? JSON.stringify(options.body) : undefined,
@@ -25,7 +41,11 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const data: unknown = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
-    throw new Error(getApiErrorMessage(data, response.status));
+    if (response.status === 401 && unauthorizedHandler) {
+      await unauthorizedHandler();
+    }
+
+    throw new ApiError(getApiErrorMessage(data, response.status), response.status);
   }
 
   return data as T;

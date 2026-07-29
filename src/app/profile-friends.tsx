@@ -1,16 +1,14 @@
 import { useRouter } from 'expo-router';
 
-import { AuthScreen } from '@/screens/auth-screen';
+import { ProtectedRoute } from '@/components/protected-route';
 import { ProfileFriendsScreen } from '@/screens/profile-friends-screen';
-import { useAuth } from '@/contexts/auth-context';
 
 export default function ProfileFriendsRoute() {
-  const { session } = useAuth();
   const router = useRouter();
 
-  return session ? (
-    <ProfileFriendsScreen onBackPress={() => router.replace('/profile')} />
-  ) : (
-    <AuthScreen />
+  return (
+    <ProtectedRoute>
+      <ProfileFriendsScreen onBackPress={() => router.replace('/profile')} />
+    </ProtectedRoute>
   );
 }

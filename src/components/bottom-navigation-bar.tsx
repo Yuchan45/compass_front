@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { borders, navigationTheme } from '@/constants/design';
+import { useFriendRequests } from '@/contexts/friend-requests-context';
 
 export type NavigationItemKey = 'map' | 'meetups' | 'friends' | 'profile';
 export type NavigationRoute = '/map' | '/meetups' | '/friends' | '/profile';
@@ -50,6 +51,7 @@ const navigationItems: NavigationItem[] = [
 export function BottomNavigationBar({ activeItem, onCreatePress }: BottomNavigationBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { pendingRequestCount } = useFriendRequests();
 
   function pressItem(item: NavigationItem) {
     if (!item.route || item.key === activeItem) {
@@ -78,7 +80,12 @@ export function BottomNavigationBar({ activeItem, onCreatePress }: BottomNavigat
           />
         </Pressable>
 
-        <NavigationButton item={navigationItems[2]} activeItem={activeItem} onPress={pressItem} />
+        <NavigationButton
+          item={navigationItems[2]}
+          activeItem={activeItem}
+          hasNotification={pendingRequestCount > 0}
+          onPress={pressItem}
+        />
         <NavigationButton item={navigationItems[3]} activeItem={activeItem} onPress={pressItem} />
       </View>
     </View>
@@ -87,11 +94,17 @@ export function BottomNavigationBar({ activeItem, onCreatePress }: BottomNavigat
 
 type NavigationButtonProps = {
   activeItem: NavigationItemKey;
+  hasNotification?: boolean;
   item: NavigationItem;
   onPress: (item: NavigationItem) => void;
 };
 
-function NavigationButton({ activeItem, item, onPress }: NavigationButtonProps) {
+function NavigationButton({
+  activeItem,
+  hasNotification = false,
+  item,
+  onPress,
+}: NavigationButtonProps) {
   const active = item.key === activeItem;
   const color = active ? navigationTheme.colors.active : navigationTheme.colors.inactive;
 
@@ -107,6 +120,7 @@ function NavigationButton({ activeItem, item, onPress }: NavigationButtonProps) 
         name={item.icon}
         size={navigationTheme.dimensions.iconSize}
       />
+      {hasNotification ? <View style={styles.notificationDot} /> : null}
     </Pressable>
   );
 }
@@ -129,6 +143,15 @@ const styles = StyleSheet.create({
     minWidth: navigationTheme.dimensions.itemMinWidth,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 3,
+    right: 12,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#f06273',
   },
   createButton: {
     width: navigationTheme.dimensions.centerButtonSize,

@@ -16,6 +16,7 @@ import {
 } from '@/components/friends';
 import { colors, dimensions, fontWeights, opacity, spacing, typography } from '@/constants/design';
 import { useAuth } from '@/contexts/auth-context';
+import { useFriendRequests } from '@/contexts/friend-requests-context';
 import { useToast } from '@/contexts/toast-context';
 import {
   acceptFriendshipRequest,
@@ -53,6 +54,7 @@ const requestSortOptions: {
 
 export function FriendsScreen() {
   const { session } = useAuth();
+  const { setPendingRequestCount } = useFriendRequests();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<FriendsTab>('search');
   const [query, setQuery] = useState('');
@@ -76,7 +78,9 @@ export function FriendsScreen() {
 
     try {
       const friendships = await getReceivedPendingFriendshipsRequest(session.accessToken);
-      setFriendRequests(friendships.map(mapReceivedFriendRequest));
+      const requests = friendships.map(mapReceivedFriendRequest);
+      setFriendRequests(requests);
+      setPendingRequestCount(requests.length);
     } catch (caughtError) {
       const message = getErrorMessage(caughtError, 'Could not load friend requests.');
       setRequestsError(message);
@@ -84,7 +88,7 @@ export function FriendsScreen() {
     } finally {
       setRequestsLoading(false);
     }
-  }, [session, showToast]);
+  }, [session, setPendingRequestCount, showToast]);
 
   useEffect(() => {
     void loadFriendRequests();
@@ -214,7 +218,12 @@ export function FriendsScreen() {
   }
 
   function removeRequest(id: string) {
-    setFriendRequests((currentRequests) => currentRequests.filter((request) => request.id !== id));
+    setFriendRequests((currentRequests) => {
+      const nextRequests = currentRequests.filter((request) => request.id !== id);
+      setPendingRequestCount(nextRequests.length);
+
+      return nextRequests;
+    });
   }
 
   async function addFriend(userId: string) {

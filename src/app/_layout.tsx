@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { fontAssets } from '@/constants/fonts';
 import { AuthProvider } from '@/contexts/auth-context';
+import { FriendRequestsProvider } from '@/contexts/friend-requests-context';
 import { ToastProvider } from '@/contexts/toast-context';
 import {
   closeGoogleAuthPopup,
@@ -41,15 +42,17 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
-        <ToastProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="map" options={{ animation: 'none' }} />
-            <Stack.Screen name="meetups" options={{ animation: 'none' }} />
-            <Stack.Screen name="friends" options={{ animation: 'none' }} />
-            <Stack.Screen name="profile" options={{ animation: 'none' }} />
-          </Stack>
-          <StatusBar style="dark" />
-        </ToastProvider>
+        <FriendRequestsProvider>
+          <ToastProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="map" options={{ animation: 'none' }} />
+              <Stack.Screen name="meetups" options={{ animation: 'none' }} />
+              <Stack.Screen name="friends" options={{ animation: 'none' }} />
+              <Stack.Screen name="profile" options={{ animation: 'none' }} />
+            </Stack>
+            <StatusBar style="dark" />
+          </ToastProvider>
+        </FriendRequestsProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
